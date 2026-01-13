@@ -163,7 +163,20 @@ function buildApiParams() {
         params.data_fine = formatDate(endDate);
     }
 
-    // Ordinamento gestito dal backend - non inviare sort_by e sort_order
+    // Ordinamento
+    const sortSelect = document.getElementById('filterSort');
+    if (sortSelect && sortSelect.value) {
+        const sortValue = sortSelect.value;
+        if (sortValue === 'data-recente') {
+            // Richiesta più recente: ordina per dataInizio desc
+            params.sort_by = 'dataInizio';
+            params.sort_order = 'desc';
+        } else if (sortValue === 'urgenza-decrescente') {
+            // Richiesta meno recente: ordina per dataInizio asc
+            params.sort_by = 'dataInizio';
+            params.sort_order = 'asc';
+        }
+    }
 
     return params;
 }
@@ -204,14 +217,18 @@ async function fetchLeavesRequestsWithFilters(params) {
         if (params.data_fine) {
             queryParams.append('data_fine', params.data_fine);
         }
-        // Ordinamento gestito dal backend - non inviare sort_by, sort_order, reference_date
+        if (params.sort_by) {
+            queryParams.append('sort_by', params.sort_by);
+        }
+        if (params.sort_order) {
+            queryParams.append('sort_order', params.sort_order);
+        }
         
         // Costruisce URL completo
         const url = `${API_BASE_URL}${API_ENDPOINT}?${queryParams.toString()}`;
         
         // Log URL chiamato
         console.log('🔵 API Request URL:', url);
-        console.log('🔵 API Request Params:', Object.fromEntries(queryParams));
         
         // Esegue fetch con timeout
         const controller = new AbortController();
@@ -1203,9 +1220,11 @@ function renderList(data) {
     }
 
     // Raggruppa le richieste per reparto
+    // Nota: i dati arrivano già ordinati dal backend, l'ordine viene mantenuto durante il raggruppamento
     const groupedByReparto = {};
     data.forEach(function(requestData) {
-        const reparto = requestData.reparto || 'Altro';
+        // Preferire department_name, fallback a reparto
+        const reparto = requestData.department_name || requestData.reparto || 'Altro';
         if (!groupedByReparto[reparto]) {
             groupedByReparto[reparto] = [];
         }
@@ -1213,7 +1232,9 @@ function renderList(data) {
     });
 
     // Ordina i reparti alfabeticamente
-    const sortedReparti = Object.keys(groupedByReparto).sort();
+    const sortedReparti = Object.keys(groupedByReparto).sort((a, b) => {
+        return a.localeCompare(b, 'it', { sensitivity: 'base' });
+    });
 
     // Renderizza ogni gruppo con la sua etichetta
     sortedReparti.forEach(function(reparto) {
@@ -1458,7 +1479,7 @@ function updateActiveFiltersChips() {
         activeFilters.push({
             key: 'sort',
             label: 'Ordinamento',
-            value: sortValue === 'urgenza-decrescente' ? 'Urgenza decrescente' : sortValue,
+            value: sortValue === 'urgenza-decrescente' ? 'Richiesta meno recente' : sortValue,
             remove: () => {
                 document.getElementById('filterSort').value = 'data-recente';
                 handleFilterChange();

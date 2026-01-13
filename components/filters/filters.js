@@ -70,31 +70,80 @@ function buildApiParams() {
     // Tipo (type_id) - estrae da attributo data-type-id
     const typeSelect = document.getElementById('filterType');
     if (typeSelect && typeSelect.value) {
-        const selectedOption = typeSelect.options[typeSelect.selectedIndex];
-        const typeId = selectedOption.getAttribute('data-type-id');
-        if (typeId) {
-            params.type_id = parseInt(typeId, 10);
+        const typeOption = typeSelect.selectedOptions[0];
+        if (typeOption) {
+            // Prova a leggere l'ID dall'attributo data-type-id
+            const typeIdAttr = typeOption.getAttribute('data-type-id');
+            if (typeIdAttr) {
+                params.type_id = parseInt(typeIdAttr, 10);
+            } else {
+                // Fallback: mappa il nome all'ID
+                const typeName = typeSelect.value;
+                const typeMap = {
+                    'Ferie': 1,
+                    'FERIE': 1,
+                    'Permessi': 2,
+                    'Permesso': 2,
+                    'PERMESSO': 2,
+                    'PERMESSI': 2
+                };
+                const mappedId = typeMap[typeName];
+                if (mappedId) {
+                    params.type_id = mappedId;
+                }
+            }
         }
     }
 
     // Reparto (department_id) - estrae da attributo data-department-id
     const repartoSelect = document.getElementById('filterReparto');
     if (repartoSelect && repartoSelect.value) {
-        const selectedOption = repartoSelect.options[repartoSelect.selectedIndex];
-        const departmentId = selectedOption.getAttribute('data-department-id');
-        if (departmentId) {
-            params.department_id = parseInt(departmentId, 10);
+        const repartoOption = repartoSelect.selectedOptions[0];
+        if (repartoOption) {
+            const deptId = repartoOption.getAttribute('data-department-id');
+            if (deptId) {
+                params.department_id = parseInt(deptId, 10);
+            } else {
+                // Fallback: cerca l'ID nei dati iniziali
+                const repartoName = repartoSelect.value;
+                const repartoItem = allRequestsData.find(req => 
+                    (req.department_name || req.reparto) === repartoName
+                );
+                if (repartoItem && repartoItem.department_id) {
+                    params.department_id = repartoItem.department_id;
+                }
+            }
         }
     }
 
     // Mansione (task_id) - estrae da attributo data-task-id
     const mansioneSelect = document.getElementById('filterMansione');
     if (mansioneSelect && mansioneSelect.value) {
-        const selectedOption = mansioneSelect.options[mansioneSelect.selectedIndex];
-        const taskId = selectedOption.getAttribute('data-task-id');
-        if (taskId) {
-            params.task_id = parseInt(taskId, 10);
+        const mansioneOption = mansioneSelect.selectedOptions[0];
+        if (mansioneOption) {
+            const taskId = mansioneOption.getAttribute('data-task-id');
+            if (taskId) {
+                params.task_id = parseInt(taskId, 10);
+            } else {
+                // Fallback: cerca l'ID nei dati iniziali
+                const mansioneName = mansioneSelect.value;
+                const mansioneItem = allRequestsData.find(req => 
+                    (req.task_name || req.mansione) === mansioneName
+                );
+                if (mansioneItem && mansioneItem.task_id) {
+                    params.task_id = mansioneItem.task_id;
+                }
+            }
         }
+    }
+
+    // Stato - usa valore testuale (non ha ID)
+    const statoSelect = document.getElementById('filterStato');
+    if (statoSelect && statoSelect.value) {
+        // Lo stato viene filtrato lato backend usando il valore testuale
+        // Non inviamo status_id perché lo stato è già gestito nel filtro status: [1, 2]
+        // Se necessario, possiamo aggiungere un filtro aggiuntivo per stato specifico
+        // Per ora manteniamo solo il filtro status: [1, 2] per archivio
     }
 
     // Periodo (data_inizio e data_fine) - da window.selectedPeriod
@@ -297,6 +346,51 @@ function getUniqueValues(data, key) {
 }
 
 /**
+ * Estrae valori univoci con i loro ID corrispondenti
+ * @param {Array} data - Array di oggetti da analizzare
+ * @param {string} nameKey - Chiave del nome (es. 'department_name')
+ * @param {string} idKey - Chiave dell'ID (es. 'department_id')
+ * @param {string} fallbackNameKey - Chiave fallback per il nome (retrocompatibilità)
+ * @returns {Array} Array di oggetti {name: string, id: number|null} ordinati alfabeticamente
+ */
+function getUniqueValuesWithIds(data, nameKey, idKey, fallbackNameKey = null) {
+    if (!Array.isArray(data) || data.length === 0) {
+        return [];
+    }
+
+    // Crea una mappa nome -> ID (usa il primo ID trovato per ogni nome)
+    const nameToIdMap = new Map();
+
+    data.forEach(item => {
+        const name = item[nameKey] || (fallbackNameKey ? item[fallbackNameKey] : null);
+        const id = item[idKey] || null;
+
+        if (name !== null && name !== undefined && name !== '') {
+            const nameStr = String(name).trim();
+            if (nameStr !== '') {
+                // Se non abbiamo ancora un ID per questo nome, salvalo
+                if (!nameToIdMap.has(nameStr)) {
+                    nameToIdMap.set(nameStr, id);
+                } else {
+                    // Se abbiamo già un ID ma questo è diverso e valido, preferisci quello valido
+                    const existingId = nameToIdMap.get(nameStr);
+                    if ((existingId === null || existingId === undefined) && id !== null && id !== undefined) {
+                        nameToIdMap.set(nameStr, id);
+                    }
+                }
+            }
+        }
+    });
+
+    // Converti in array e ordina alfabeticamente
+    const result = Array.from(nameToIdMap.entries())
+        .map(([name, id]) => ({ name, id }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'it', { sensitivity: 'base' }));
+
+    return result;
+}
+
+/**
  * Aggiorna i dati delle richieste e ricarica i filtri dinamici
  * @param {Array} requestsData - Array completo dei dati delle richieste aggiornati
  */
@@ -333,23 +427,33 @@ function updateFilterOptions(requests) {
     const filterConfigs = [
         {
             id: 'filterReparto',
-            key: 'reparto',
+            nameKey: 'department_name',
+            idKey: 'department_id',
+            fallbackNameKey: 'reparto', // Retrocompatibilità
+            dataAttribute: 'data-department-id',
             label: 'Reparto'
         },
         {
             id: 'filterMansione',
-            key: 'mansione',
+            nameKey: 'task_name',
+            idKey: 'task_id',
+            fallbackNameKey: 'mansione', // Retrocompatibilità
+            dataAttribute: 'data-task-id',
             label: 'Mansione'
         },
         {
             id: 'filterType',
-            key: 'tipo_richiesta',
+            nameKey: 'type_name',
+            idKey: 'type_id',
+            fallbackNameKey: 'tipo_richiesta', // Retrocompatibilità
+            dataAttribute: 'data-type-id',
             label: 'Tipo'
         },
         {
             id: 'filterStato',
             key: 'stato',
             label: 'Stato'
+            // Stato non ha ID, usa solo valori testuali
         }
     ];
 
@@ -384,14 +488,77 @@ function updateFilterOptions(requests) {
 
         // Se non è empty state, estrai e aggiungi i valori univoci
         if (!isEmpty) {
-            const uniqueValues = getUniqueValues(requests, config.key);
-            
-            uniqueValues.forEach(value => {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = value;
-                selectElement.appendChild(option);
-            });
+            // Gestione speciale per stato (non ha ID)
+            if (config.id === 'filterStato') {
+                const uniqueValues = getUniqueValues(requests, config.key);
+                
+                uniqueValues.forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    selectElement.appendChild(option);
+                });
+            }
+            // Gestione speciale per tipo (con mappatura hardcoded)
+            else if (config.id === 'filterType') {
+                // Mappa diretta per tipo
+                const typeMap = {
+                    'Ferie': 1,
+                    'FERIE': 1,
+                    'Permessi': 2,
+                    'Permesso': 2,
+                    'PERMESSO': 2,
+                    'PERMESSI': 2
+                };
+                
+                const uniqueTypes = getUniqueValues(requests, config.nameKey);
+                if (uniqueTypes.length === 0 && config.fallbackNameKey) {
+                    const fallbackTypes = getUniqueValues(requests, config.fallbackNameKey);
+                    fallbackTypes.forEach(typeName => {
+                        const option = document.createElement('option');
+                        option.value = typeName;
+                        option.textContent = typeName;
+                        // Mappa il nome all'ID
+                        const typeId = typeMap[typeName] || null;
+                        if (typeId !== null) {
+                            option.setAttribute(config.dataAttribute, typeId.toString());
+                        }
+                        selectElement.appendChild(option);
+                    });
+                } else {
+                    uniqueTypes.forEach(typeName => {
+                        const option = document.createElement('option');
+                        option.value = typeName;
+                        option.textContent = typeName;
+                        // Mappa il nome all'ID
+                        const typeId = typeMap[typeName] || null;
+                        if (typeId !== null) {
+                            option.setAttribute(config.dataAttribute, typeId.toString());
+                        }
+                        selectElement.appendChild(option);
+                    });
+                }
+            }
+            // Per reparto e mansione, usa la funzione che estrae nome e ID
+            else {
+                const uniqueValuesWithIds = getUniqueValuesWithIds(
+                    requests,
+                    config.nameKey,
+                    config.idKey,
+                    config.fallbackNameKey
+                );
+                
+                uniqueValuesWithIds.forEach(({ name, id }) => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    // Salva l'ID come attributo data-* se disponibile
+                    if (id !== null && id !== undefined) {
+                        option.setAttribute(config.dataAttribute, id.toString());
+                    }
+                    selectElement.appendChild(option);
+                });
+            }
         }
 
         // Ripristina la selezione precedente se ancora valida

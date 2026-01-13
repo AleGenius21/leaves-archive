@@ -2,12 +2,19 @@
  * Filter Bar Component - Logica di filtraggio e ordinamento
  */
 
+// Configurazione API
+const API_BASE_URL = 'http://localhost:3001';
+const API_ENDPOINT = '/api/requests';
+const API_TIMEOUT = 30000; // 30 secondi
+
 // Riferimenti globali
 let allRequestsData = [];
 let filteredRequestsData = [];
 let filterBarLoaded = false; // Flag per verificare se il componente è stato caricato
 // Variabile globale per il periodo selezionato dal calendario
 window.selectedPeriod = null;
+// Variabile globale per debounce ricerca
+let searchDebounceTimer = null;
 
 // Esponi variabili globalmente per accesso da altri componenti
 window.allRequestsData = allRequestsData;
@@ -46,15 +53,170 @@ async function loadFilterBarHTML() {
 }
 
 /**
+ * Costruisce i parametri API dai filtri UI
+ * @returns {Object} Oggetto con i parametri per la chiamata API
+ */
+function buildApiParams() {
+    const params = {
+        status: [1, 2] // Archivio: approvate (1) e rifiutate (2)
+    };
+
+    // Ricerca testuale (nome)
+    const searchInput = document.getElementById('filterSearch');
+    if (searchInput && searchInput.value.trim()) {
+        params.nome = searchInput.value.trim();
+    }
+
+    // Tipo (type_id) - estrae da attributo data-type-id
+    const typeSelect = document.getElementById('filterType');
+    if (typeSelect && typeSelect.value) {
+        const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+        const typeId = selectedOption.getAttribute('data-type-id');
+        if (typeId) {
+            params.type_id = parseInt(typeId, 10);
+        }
+    }
+
+    // Reparto (department_id) - estrae da attributo data-department-id
+    const repartoSelect = document.getElementById('filterReparto');
+    if (repartoSelect && repartoSelect.value) {
+        const selectedOption = repartoSelect.options[repartoSelect.selectedIndex];
+        const departmentId = selectedOption.getAttribute('data-department-id');
+        if (departmentId) {
+            params.department_id = parseInt(departmentId, 10);
+        }
+    }
+
+    // Mansione (task_id) - estrae da attributo data-task-id
+    const mansioneSelect = document.getElementById('filterMansione');
+    if (mansioneSelect && mansioneSelect.value) {
+        const selectedOption = mansioneSelect.options[mansioneSelect.selectedIndex];
+        const taskId = selectedOption.getAttribute('data-task-id');
+        if (taskId) {
+            params.task_id = parseInt(taskId, 10);
+        }
+    }
+
+    // Periodo (data_inizio e data_fine) - da window.selectedPeriod
+    if (window.selectedPeriod && window.selectedPeriod.startDate && window.selectedPeriod.endDate) {
+        const startDate = new Date(window.selectedPeriod.startDate);
+        const endDate = new Date(window.selectedPeriod.endDate);
+        
+        // Formatta in YYYY-MM-DD
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        params.data_inizio = formatDate(startDate);
+        params.data_fine = formatDate(endDate);
+    }
+
+    // Ordinamento gestito dal backend - non inviare sort_by e sort_order
+
+    return params;
+}
+
+/**
+ * Esegue chiamata API per ottenere richieste filtrate
+ * @param {Object} params - Parametri per la chiamata API
+ * @returns {Promise<Array>} Promise che si risolve con array di richieste
+ */
+async function fetchLeavesRequestsWithFilters(params) {
+    try {
+        // Costruisce query string con URLSearchParams
+        const queryParams = new URLSearchParams();
+        
+        // Gestisce status come array (status=1&status=2)
+        if (Array.isArray(params.status)) {
+            params.status.forEach(s => queryParams.append('status', s.toString()));
+        } else if (params.status !== undefined) {
+            queryParams.append('status', params.status.toString());
+        }
+        
+        // Aggiunge altri parametri
+        if (params.nome) {
+            queryParams.append('nome', params.nome);
+        }
+        if (params.type_id !== undefined) {
+            queryParams.append('type_id', params.type_id.toString());
+        }
+        if (params.department_id !== undefined) {
+            queryParams.append('department_id', params.department_id.toString());
+        }
+        if (params.task_id !== undefined) {
+            queryParams.append('task_id', params.task_id.toString());
+        }
+        if (params.data_inizio) {
+            queryParams.append('data_inizio', params.data_inizio);
+        }
+        if (params.data_fine) {
+            queryParams.append('data_fine', params.data_fine);
+        }
+        // Ordinamento gestito dal backend - non inviare sort_by, sort_order, reference_date
+        
+        // Costruisce URL completo
+        const url = `${API_BASE_URL}${API_ENDPOINT}?${queryParams.toString()}`;
+        
+        // Log URL chiamato
+        console.log('🔵 API Request URL:', url);
+        console.log('🔵 API Request Params:', Object.fromEntries(queryParams));
+        
+        // Esegue fetch con timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`Errore API: ${response.status} ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        // Log risposta API
+        console.log('🟢 API Response:', result);
+
+
+        
+        // Gestisce risposte { success, data } o array diretto
+        let finalData = [];
+        if (result && typeof result === 'object') {
+            if (result.success !== undefined && result.data) {
+                finalData = Array.isArray(result.data) ? result.data : [];
+            } else if (Array.isArray(result)) {
+                finalData = result;
+            } else {
+                throw new Error('Formato risposta API non riconosciuto');
+            }
+        }
+
+        
+        return finalData;
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            throw new Error('Timeout: la richiesta ha impiegato troppo tempo');
+        }
+        console.error('Errore nella chiamata API:', error);
+        throw error;
+    }
+}
+
+/**
  * Inizializza il componente Filter Bar
- * @param {Array} requestsData - Array completo dei dati delle richieste (può essere vuoto)
+ * @param {Array} requestsData - Array completo dei dati delle richieste (deprecato - non più utilizzato)
  */
 async function initFilterBar(requestsData = []) {
-    // Filtra solo richieste con stato "Approvato" o "Rifiutato" (escludi "In Attesa")
-    const archiveData = Array.isArray(requestsData) && requestsData.length > 0
-        ? requestsData.filter(req => req.stato === 'Approvato' || req.stato === 'Rifiutato')
-        : [];
-
     // Carica il contenuto HTML del componente se non è già presente
     try {
         await loadFilterBarHTML();
@@ -68,24 +230,43 @@ async function initFilterBar(requestsData = []) {
         }
     }
 
-    allRequestsData = [...archiveData];
-    window.allRequestsData = allRequestsData; // Aggiorna anche la variabile globale
-
-    // Popola dinamicamente tutti i filtri (Reparto, Stato, Tipo) con valori dai dati
-    updateFilterOptions(allRequestsData);
-
     // Setup event listeners
     setupFilterListeners();
 
     // Disabilita i filtri all'avvio (verranno abilitati solo quando viene selezionato un periodo)
     setFiltersEnabled(false);
 
-    // Se non ci sono dati, mostra messaggio informativo invece di renderizzare lista
-    if (archiveData.length === 0) {
+    // Se non c'è un periodo selezionato, mostra messaggio informativo
+    if (!window.selectedPeriod || !window.selectedPeriod.startDate || !window.selectedPeriod.endDate) {
+        showPeriodSelectionMessage();
+        return;
+    }
+
+    // Caricamento iniziale con status [1, 2] (archivio: approvate e rifiutate)
+    try {
+        showFilterSpinner();
+        showListSpinner();
+        
+        const initialParams = { status: [1, 2] };
+        const initialData = await fetchLeavesRequestsWithFilters(initialParams);
+        
+        allRequestsData = [...initialData];
+        window.allRequestsData = allRequestsData;
+        filteredRequestsData = [...initialData];
+        window.filteredRequestsData = filteredRequestsData;
+        
+        // Popola dinamicamente tutti i filtri con valori dai dati
+        updateFilterOptions(allRequestsData);
+        
+        // Renderizza la lista
+        renderList(filteredRequestsData);
+        
+    } catch (error) {
+        console.error('Errore nel caricamento iniziale:', error);
         showEmptyStateMessage();
-    } else {
-        // Render iniziale - usa handleFilterChange per applicare ordinamento e filtri
-        handleFilterChange();
+    } finally {
+        hideFilterSpinner();
+        hideListSpinner();
     }
 }
 
@@ -528,10 +709,10 @@ function setupYearDisplayObserver(flatpickrInstance) {
  * Setup event listeners per tutti i filtri
  */
 function setupFilterListeners() {
-    // Ricerca testuale
+    // Ricerca testuale (con debounce di 2 secondi)
     const searchInput = document.getElementById('filterSearch');
     if (searchInput) {
-        searchInput.addEventListener('input', handleFilterChange);
+        searchInput.addEventListener('input', handleSearchChange);
     }
 
     // Filtro tipologia
@@ -612,7 +793,7 @@ window.setFiltersEnabled = setFiltersEnabled;
 /**
  * Gestisce il cambiamento di qualsiasi filtro
  */
-function handleFilterChange() {
+async function handleFilterChange() {
     // Se non c'è un periodo selezionato, mostra il messaggio e non renderizzare la lista
     if (!window.selectedPeriod || !window.selectedPeriod.startDate || !window.selectedPeriod.endDate) {
         // Assicurati che i filtri siano disabilitati quando non c'è periodo
@@ -623,11 +804,67 @@ function handleFilterChange() {
         return;
     }
     
-    filteredRequestsData = applyFilters();
-    window.filteredRequestsData = filteredRequestsData; // Aggiorna anche la variabile globale
-    renderList(filteredRequestsData);
-    updateActiveFiltersChips();
-    updateResetButtonState();
+    // Mostra spinner durante il caricamento
+    showFilterSpinner();
+    showListSpinner();
+    
+    try {
+        // Costruisce parametri API dai filtri UI
+        const params = buildApiParams();
+        
+        // Esegue chiamata API
+        const apiData = await fetchLeavesRequestsWithFilters(params);
+        
+        // Aggiorna dati globali con la risposta API
+        allRequestsData = [...apiData];
+        window.allRequestsData = allRequestsData;
+        filteredRequestsData = [...apiData];
+        window.filteredRequestsData = filteredRequestsData;
+        
+        // Aggiorna opzioni dei dropdown
+        updateFilterOptions(allRequestsData);
+        
+        // Renderizza la lista (i dati arrivano già ordinati dal BE)
+        renderList(filteredRequestsData);
+        
+        // Aggiorna chips filtri attivi
+        updateActiveFiltersChips();
+        updateResetButtonState();
+        
+    } catch (error) {
+        console.error('Errore nel caricamento dati:', error);
+        
+        // Mostra messaggio di errore
+        const approvalList = document.getElementById('approvalList');
+        if (approvalList) {
+            approvalList.innerHTML = '';
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'text-center py-4 text-danger';
+            errorMessage.style.fontSize = '0.917rem';
+            errorMessage.style.padding = '52.8px';
+            errorMessage.textContent = `Errore nel caricamento dei dati: ${error.message || 'Errore sconosciuto'}`;
+            approvalList.appendChild(errorMessage);
+        }
+    } finally {
+        // Nascondi spinner
+        hideFilterSpinner();
+        hideListSpinner();
+    }
+}
+
+/**
+ * Gestisce il cambiamento del filtro ricerca con debounce
+ */
+function handleSearchChange() {
+    // Cancella timer precedente
+    if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+    }
+    
+    // Imposta nuovo timer (2 secondi)
+    searchDebounceTimer = setTimeout(() => {
+        handleFilterChange();
+    }, 2000);
 }
 
 // Esponi handleFilterChange globalmente per accesso da altri componenti
@@ -636,7 +873,9 @@ window.handleFilterChange = handleFilterChange;
 /**
  * Applica tutti i filtri e restituisce l'array filtrato
  * @returns {Array} Array filtrato e ordinato
+ * @deprecated Non più utilizzata - i filtri sono gestiti dal backend tramite API
  */
+/*
 function applyFilters() {
     // Sincronizza allRequestsData con window.allRequestsData se è stato aggiornato
     if (window.allRequestsData && Array.isArray(window.allRequestsData)) {
@@ -740,13 +979,16 @@ function applyFilters() {
 
     return filtered;
 }
+*/
 
 /**
  * Ordina le richieste in base al criterio selezionato
  * @param {Array} requests - Array di richieste da ordinare
  * @param {string} sortType - Tipo di ordinamento ('data-recente' o 'urgenza-decrescente')
  * @returns {Array} Array ordinato
+ * @deprecated Non più utilizzata - l'ordinamento è gestito dal backend tramite API
  */
+/*
 function sortRequests(requests, sortType) {
     const sorted = [...requests];
 
@@ -770,6 +1012,7 @@ function sortRequests(requests, sortType) {
 
     return sorted;
 }
+*/
 
 /**
  * Renderizza la lista delle richieste filtrate raggruppate per reparto

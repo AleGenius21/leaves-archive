@@ -11,6 +11,7 @@
 	gap: 13.2px;
 	cursor: pointer;
 	margin-right: 10px;
+	position: relative;
 }
 
 .approval-row:hover {
@@ -103,37 +104,55 @@
 	color: #ffffff;
 }
 
-.request-hours {
-	font-size: 0.833rem; /* 11px */
+.request-quantity {
+	font-size: 0.85rem;
 	color: #666666;
-	font-weight: 500;
-	white-space: nowrap;
-}
-
-.request-datetime {
-	font-size: 0.833rem; /* 11px */
-	color: #000000;
-	white-space: nowrap;
-}
-
-/* Badge stato */
-.request-state-badge {
-	font-size: 0.75rem; /* 9.9px */
-	padding: 3.3px 8.8px;
-	border-radius: 3.3px;
-	border: none;
 	font-weight: 600;
 	white-space: nowrap;
 }
 
-.badge-approvato {
-	background-color: #22c55e; /* green-500 */
-	color: #ffffff;
+.request-datetime {
+	font-size: 0.835rem; /* Font-size minimo */
+	color: #000000;
+	white-space: nowrap;
+	display: flex;
+	align-items: center;
 }
 
-.badge-rifiutato {
-	background-color: #ef4444; /* red-500 */
-	color: #ffffff;
+.request-datetime > * {
+	font-size: 0.835rem; /* Assicura che tutti i figli abbiano almeno 0.835rem */
+}
+
+.datetime-separator {
+	margin: 0 8.8px; /* Spazio maggiore tra data e orari */
+	color: #000000;
+}
+
+.datetime-time {
+	color: #000000;
+}
+
+/* Icona stato all'estremo destro */
+.approval-row-status-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-left: auto;
+	padding-left: 13.2px;
+}
+
+.approval-row-status-icon i {
+	font-size: 1.2rem;
+	line-height: 1;
+}
+
+.approval-row-status-icon.status-approved i {
+	color: #22c55e; /* green-500 */
+}
+
+.approval-row-status-icon.status-rejected i {
+	color: #ef4444; /* red-500 */
 }
 
 /* Responsive adjustments */

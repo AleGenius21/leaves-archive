@@ -1,0 +1,364 @@
+/* Detail Panel Container */
+.detail-panel {
+    width: 0;
+    overflow: hidden;
+    background-color: #ffffff;
+    border-left: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease-in-out;
+    flex-shrink: 0;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+}
+
+.detail-panel.panel-open {
+    width: 50%;
+    overflow: hidden;
+}
+
+/* Close Button */
+.btn-close-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26.4px;
+    height: 26.4px;
+    padding: 0;
+    border: 1px solid #d0d0d0;
+    background-color: #ffffff;
+    border-radius: 3.3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #333333;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.btn-close-panel:hover {
+    background-color: #f5f5f5;
+    border-color: #a0a0a0;
+    color: #000000;
+}
+
+.btn-close-panel:active {
+    background-color: #e0e0e0;
+}
+
+.btn-close-panel:focus {
+    outline: none;
+    box-shadow: 0 0 0 2.2px rgba(128, 128, 128, 0.1);
+}
+
+.btn-close-panel i {
+    font-size: 1rem; /* 13.2px */
+}
+
+/* Panel Content */
+.panel-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 13.2px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Scrollbar moderna e sottile per panel content */
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: #c0c0c0;
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0;
+}
+
+/* Firefox */
+.panel-content {
+    scrollbar-width: thin;
+    scrollbar-color: #c0c0c0 #f5f5f5;
+}
+
+/* Periodo Presets Container */
+.periodo-presets-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 0 24px 13.2px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 6px 8px;
+    font-size: 1.1rem; /* ~14.5px - aumentato ulteriormente */
+    font-weight: 500;
+    color: #333333;
+    background-color: #ffffff;
+    border: 1px solid #d0d0d0;
+    border-radius: 3.3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.preset-btn:hover {
+    background-color: #f5f5f5;
+    border-color: #a0a0a0;
+    color: #000000;
+}
+
+.preset-btn:active {
+    background-color: #e0e0e0;
+}
+
+.preset-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2.2px rgba(128, 128, 128, 0.1);
+}
+
+.preset-btn.active {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #000000;
+    font-weight: 600;
+}
+
+/* Calendar Container */
+.calendar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+/* No Data Message */
+.calendar-no-data {
+    text-align: center;
+    padding: 26.4px;
+    color: #666666;
+    font-size: 0.917rem; /* 12.1px */
+}
+
+/* Month Calendar */
+.month-calendar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+/* Month Header */
+.month-header {
+    font-size: 1rem; /* 13.2px - coerente con il resto */
+    font-weight: 700;
+    color: #000000;
+    padding: 6px 0;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 2px;
+}
+
+/* Calendar Grid */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1.5px;
+    width: 100%;
+}
+
+/* Calendar Weekday Header */
+.calendar-weekday {
+    font-size: 0.8625rem; /* ~11.4px - aumentato del 15% */
+    font-weight: 600;
+    color: #666666;
+    text-align: center;
+    padding: 4px 0;
+    background-color: #fafafa;
+    border-radius: 2px;
+}
+
+/* Calendar Day */
+.calendar-day {
+    display: flex;
+    flex-direction: column;
+    padding: 2px 4px;
+    font-size: 0.917rem; /* 12.1px - allineato con employee-name */
+    color: #000000;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    cursor: default;
+    position: relative;
+    height: 70px;
+    justify-content: space-between;
+}
+
+.calendar-day.empty {
+    background-color: transparent;
+    border: none;
+    cursor: default;
+}
+
+.calendar-day.today {
+    border-color: #000000;
+    border-width: 1.5px;
+    font-weight: 600;
+}
+
+.calendar-day.selected-day {
+    background-color: #f0f0f0;
+    border-color: #3b82f6;
+    border-width: 2px;
+    font-weight: 600;
+}
+
+/* Period range selection styles */
+.calendar-day.period-start {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #000000;
+    border-width: 2px;
+    font-weight: 600;
+    border-radius: 2px 0 0 2px;
+}
+
+.calendar-day.period-end {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #000000;
+    border-width: 2px;
+    font-weight: 600;
+    border-radius: 0 2px 2px 0;
+}
+
+.calendar-day.period-range {
+    background-color: #f0f0f0;
+    border-color: #d0d0d0;
+    border-width: 1px;
+    border-radius: 0;
+}
+
+.calendar-day.period-start.period-end {
+    border-radius: 2px;
+}
+
+/* Day number container */
+.calendar-day-number {
+    font-size: 0.95rem; /* ~12.5px - aumentato leggermente */
+    font-weight: 600;
+    align-self: flex-start;
+    line-height: 1.2;
+}
+
+/* Sunday circle - cerchio rosso per domeniche */
+.calendar-day-number.sunday {
+    width: 1.3rem;
+    height: 1.3rem;
+    min-width: 1.3rem; /* Assicura dimensioni fisse */
+    min-height: 1.3rem;
+    border: 1.5px solid #f87171; /* Rosso più tenue e meno impattante */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* align-self: flex-start è già ereditato dalla classe base, mantiene posizione in alto a sinistra */
+    text-align: center; /* Centra il testo del numero dentro il cerchio */
+    line-height: 1; /* Rimuove spazio extra sopra/sotto il numero */
+}
+
+/* Badge container */
+.calendar-day-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-self: flex-end;
+    width: 100%;
+    margin-top: auto;
+}
+
+/* Calendar Badge */
+.calendar-badge {
+    font-size: 0.75rem; /* 9.9px - allineato con badge parte sinistra */
+    font-weight: 500;
+    padding: 1px 4px;
+    border-radius: 2px;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-badge-ferie {
+    background-color: #f97316; /* orange-500 */
+    color: #ffffff;
+}
+
+.calendar-badge-permesso {
+    background-color: #3b82f6; /* blue-500 */
+    color: #ffffff;
+}
+
+/* Days with requests */
+/* No special styling needed for .calendar-day.has-requests, badges handle the display */
+
+/* Type colors - removed, using badges instead */
+/* Background colors are no longer applied to cells */
+
+/* State colors - border indicator removed */
+/* Contorni rosso/verde rimossi come richiesto */
+
+/* Selected request highlight */
+.calendar-day.selected-request {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+    z-index: 5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .detail-panel.panel-open {
+        width: 100%;
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .list-section.panel-open {
+        width: 0;
+        overflow: hidden;
+    }
+
+    .calendar-day {
+        min-height: 18px;
+        font-size: 0.75rem; /* ~9.9px */
+        padding: 1px 3px;
+    }
+
+    .calendar-badge {
+        font-size: 0.6rem; /* ~7.9px */
+        padding: 1px 3px;
+    }
+
+    .month-header {
+        font-size: 0.85rem; /* ~11.2px */
+    }
+}
+

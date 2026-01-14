@@ -3,13 +3,15 @@
  */
 
 // Configurazione API
-const API_BASE_URL = 'http://localhost:3001';
-const API_ENDPOINT = '/api/requests';
+const API_BASE_URL = 'https://my-genius.it/wp-json/genius/v1';
+const API_ENDPOINT = '/get_leaves';
 const API_TIMEOUT = 30000; // 30 secondi
+const API_BEARER_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NjgzMjQ1NjEsImV4cCI6MTc2ODkyOTM2MSwidWlkIjoyNTUyLCJ1c2VybmFtZSI6IlNNTk1SSzk3TDAzQTk0NFIifQ.BpxtmyEahDcZexIeb9NyeE5k4Gp_TSYaRFTyflKS0NE';
 
 // Riferimenti globali
 let allRequestsData = [];
 let filteredRequestsData = [];
+let filterOptionsData = []; // Dati completi per popolare le opzioni dei filtri (immutabili)
 let filterBarLoaded = false; // Flag per verificare se il componente è stato caricato
 // Variabile globale per il periodo selezionato dal calendario
 window.selectedPeriod = null;
@@ -237,7 +239,8 @@ async function fetchLeavesRequestsWithFilters(params) {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_BEARER_TOKEN}`
             },
             signal: controller.signal
         });
@@ -253,12 +256,16 @@ async function fetchLeavesRequestsWithFilters(params) {
         // Log risposta API
         console.log('🟢 API Response:', result);
 
-
         
-        // Gestisce risposte { success, data } o array diretto
+        // Gestisce nuova struttura API con items, filters e meta
         let finalData = [];
         if (result && typeof result === 'object') {
-            if (result.success !== undefined && result.data) {
+            // Nuova struttura: { items: [...], filters: {...}, meta: {...} }
+            if (result.items && Array.isArray(result.items)) {
+                finalData = result.items;
+            }
+            // Fallback per compatibilità con vecchia struttura
+            else if (result.success !== undefined && result.data) {
                 finalData = Array.isArray(result.data) ? result.data : [];
             } else if (Array.isArray(result)) {
                 finalData = result;
@@ -302,18 +309,41 @@ async function initFilterBar(requestsData = []) {
     // Disabilita i filtri all'avvio (verranno abilitati solo quando viene selezionato un periodo)
     setFiltersEnabled(false);
 
-    // Se non c'è un periodo selezionato, mostra messaggio informativo
+    // CHIAMATA MASTER: Carica tutte le opzioni possibili per i filtri (senza filtri applicati)
+    // Questa chiamata serve solo per popolare le dropdown con tutte le opzioni disponibili
+    try {
+        showFilterSpinner();
+        
+        const masterParams = { status: [1, 2] }; // Solo status archivio, nessun altro filtro
+        const masterData = await fetchLeavesRequestsWithFilters(masterParams);
+        
+        // Salva i dati completi per le opzioni dei filtri (immutabili)
+        filterOptionsData = [...masterData];
+        
+        // Popola dinamicamente tutti i filtri con tutte le opzioni possibili
+        updateFilterOptions(filterOptionsData);
+        
+    } catch (error) {
+        console.error('Errore nel caricamento opzioni filtri:', error);
+        // Continua comunque, anche se le opzioni non sono state caricate
+    } finally {
+        hideFilterSpinner();
+    }
+
+    // Se non c'è un periodo selezionato, mostra messaggio informativo e termina
     if (!window.selectedPeriod || !window.selectedPeriod.startDate || !window.selectedPeriod.endDate) {
         showPeriodSelectionMessage();
         return;
     }
 
-    // Caricamento iniziale con status [1, 2] (archivio: approvate e rifiutate)
+    // CHIAMATA DATI: Carica i dati iniziali con eventuali filtri periodo applicati
+    // Questa chiamata serve per popolare la lista dei risultati
     try {
         showFilterSpinner();
         showListSpinner();
         
-        const initialParams = { status: [1, 2] };
+        // Costruisce parametri con eventuali filtri periodo dal calendario
+        const initialParams = buildApiParams();
         const initialData = await fetchLeavesRequestsWithFilters(initialParams);
         
         allRequestsData = [...initialData];
@@ -321,11 +351,13 @@ async function initFilterBar(requestsData = []) {
         filteredRequestsData = [...initialData];
         window.filteredRequestsData = filteredRequestsData;
         
-        // Popola dinamicamente tutti i filtri con valori dai dati
-        updateFilterOptions(allRequestsData);
-        
-        // Renderizza la lista
+        // Renderizza la lista (le opzioni dei filtri sono già state popolate dalla chiamata master)
         renderList(filteredRequestsData);
+        
+        // Abilita i filtri dopo il caricamento dei dati (solo se c'è un periodo selezionato)
+        if (window.selectedPeriod && window.selectedPeriod.startDate && window.selectedPeriod.endDate) {
+            setFiltersEnabled(true);
+        }
         
     } catch (error) {
         console.error('Errore nel caricamento iniziale:', error);
@@ -424,7 +456,14 @@ function updateFilterBarData(requestsData) {
     
     allRequestsData = [...archiveData];
     window.allRequestsData = allRequestsData; // Aggiorna anche la variabile globale
-    updateFilterOptions(allRequestsData);
+    
+    // Aggiorna filterOptionsData solo se è vuoto (per mantenere filtri statici)
+    // Se filterOptionsData è già popolato, non aggiornare le opzioni
+    if (filterOptionsData.length === 0) {
+        filterOptionsData = [...archiveData];
+        updateFilterOptions(filterOptionsData);
+    }
+    
     handleFilterChange();
 }
 
@@ -912,8 +951,8 @@ async function handleFilterChange() {
         filteredRequestsData = [...apiData];
         window.filteredRequestsData = filteredRequestsData;
         
-        // Aggiorna opzioni dei dropdown
-        updateFilterOptions(allRequestsData);
+        // NOTA: NON aggiornare le opzioni dei dropdown - devono rimanere statiche
+        // Le opzioni sono già state popolate all'inizializzazione con filterOptionsData
         
         // Renderizza la lista (i dati arrivano già ordinati dal BE)
         renderList(filteredRequestsData);
@@ -1124,7 +1163,7 @@ function renderList(data) {
     list.innerHTML = '';
 
     if (data.length === 0) {
-        list.innerHTML = '<div class="text-center py-4 text-muted">Nessuna richiesta trovata.</div>';
+        list.innerHTML = '<div class="text-center py-4 text-muted" style="font-size: 0.917rem;">Nessuna richiesta trovata.</div>';
         return;
     }
 
@@ -1571,8 +1610,12 @@ async function loadAndDisplayDayData(selectedDate) {
         filteredRequestsData = [...dayRequests];
         window.filteredRequestsData = filteredRequestsData;
 
-        // Aggiorna opzioni dei filtri con i nuovi dati
-        updateFilterOptions(allRequestsData);
+        // Aggiorna filterOptionsData solo se è vuoto (per mantenere filtri statici)
+        // Se filterOptionsData è già popolato, non aggiornare le opzioni
+        if (filterOptionsData.length === 0) {
+            filterOptionsData = [...dayRequests];
+            updateFilterOptions(filterOptionsData);
+        }
 
         // Abilita i filtri solo se i dati sono stati caricati con successo
         if (dayRequests && dayRequests.length > 0) {

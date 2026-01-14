@@ -428,178 +428,85 @@ function updateFilterBarData(requestsData) {
     handleFilterChange();
 }
 
+
+function getStatusString(status) {
+    if (status === 1) return 'Approvato';
+    if (status === 2) return 'Rifiutato';
+    if (status === 0) return 'In Attesa';
+    return 'Sconosciuto';
+}
+
 /**
  * Popola dinamicamente tutte le opzioni dei filtri basandosi sui dati delle richieste
  * @param {Array} requests - Array completo dei dati delle richieste
  */
 function updateFilterOptions(requests) {
-    if (!Array.isArray(requests)) {
-        console.error('updateFilterOptions: requests deve essere un array');
-        return;
-    }
+    if (!Array.isArray(requests)) return;
 
-    const isEmpty = requests.length === 0;
-
-    // Configurazione dei filtri da popolare
+    // Configurazione aggiornata per i nuovi campi
     const filterConfigs = [
         {
             id: 'filterReparto',
             nameKey: 'department_name',
             idKey: 'department_id',
-            fallbackNameKey: 'reparto', // Retrocompatibilità
-            dataAttribute: 'data-department-id',
-            label: 'Reparto'
+            dataAttribute: 'data-department-id'
         },
         {
             id: 'filterMansione',
             nameKey: 'task_name',
             idKey: 'task_id',
-            fallbackNameKey: 'mansione', // Retrocompatibilità
-            dataAttribute: 'data-task-id',
-            label: 'Mansione'
+            dataAttribute: 'data-task-id'
         },
         {
             id: 'filterType',
-            nameKey: 'type_name',
-            idKey: 'type_id',
-            fallbackNameKey: 'tipo_richiesta', // Retrocompatibilità
-            dataAttribute: 'data-type-id',
-            label: 'Tipo'
-        },
-        {
-            id: 'filterStato',
-            key: 'stato',
-            label: 'Stato'
-            // Stato non ha ID, usa solo valori testuali
+            nameKey: 'type_name', // Nuovo campo
+            idKey: 'type',        // Nuovo campo ID
+            dataAttribute: 'data-type-id'
         }
     ];
 
-    // Popola ogni filtro
     filterConfigs.forEach(config => {
-        const selectElement = document.getElementById(config.id);
-        if (!selectElement) {
-            console.warn(`updateFilterOptions: elemento ${config.id} non trovato`);
-            return;
-        }
-
-        // Salva il valore corrente selezionato
-        const currentValue = selectElement.value;
-
-        // Svuota le opzioni mantenendo solo "Tutti"
-        const defaultOption = selectElement.querySelector('option[value=""]');
-        selectElement.innerHTML = '';
+        const select = document.getElementById(config.id);
+        if(!select) return;
         
-        if (defaultOption) {
-            // Ricrea l'opzione "Tutti" con lo stesso contenuto
-            const newDefaultOption = document.createElement('option');
-            newDefaultOption.value = '';
-            newDefaultOption.textContent = defaultOption.textContent || 'Tutti';
-            selectElement.appendChild(newDefaultOption);
-        } else {
-            // Se non esiste, crea l'opzione "Tutti"
-            const newDefaultOption = document.createElement('option');
-            newDefaultOption.value = '';
-            newDefaultOption.textContent = 'Tutti';
-            selectElement.appendChild(newDefaultOption);
-        }
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">Tutti</option>';
+        
+        // Estrai valori unici
+        const uniqueItems = new Map();
+        requests.forEach(r => {
+            const name = r[config.nameKey];
+            const id = r[config.idKey];
+            if(name) uniqueItems.set(name, id);
+        });
 
-        // Se non è empty state, estrai e aggiungi i valori univoci
-        if (!isEmpty) {
-            // Gestione speciale per stato (non ha ID)
-            if (config.id === 'filterStato') {
-                const uniqueValues = getUniqueValues(requests, config.key);
-                
-                uniqueValues.forEach(value => {
-                    const option = document.createElement('option');
-                    option.value = value;
-                    option.textContent = value;
-                    selectElement.appendChild(option);
-                });
-            }
-            // Gestione speciale per tipo (con mappatura hardcoded)
-            else if (config.id === 'filterType') {
-                // Mappa diretta per tipo
-                const typeMap = {
-                    'Ferie': 1,
-                    'FERIE': 1,
-                    'Permessi': 2,
-                    'Permesso': 2,
-                    'PERMESSO': 2,
-                    'PERMESSI': 2
-                };
-                
-                const uniqueTypes = getUniqueValues(requests, config.nameKey);
-                if (uniqueTypes.length === 0 && config.fallbackNameKey) {
-                    const fallbackTypes = getUniqueValues(requests, config.fallbackNameKey);
-                    fallbackTypes.forEach(typeName => {
-                        const option = document.createElement('option');
-                        option.value = typeName;
-                        option.textContent = typeName;
-                        // Mappa il nome all'ID
-                        const typeId = typeMap[typeName] || null;
-                        if (typeId !== null) {
-                            option.setAttribute(config.dataAttribute, typeId.toString());
-                        }
-                        selectElement.appendChild(option);
-                    });
-                } else {
-                    uniqueTypes.forEach(typeName => {
-                        const option = document.createElement('option');
-                        option.value = typeName;
-                        option.textContent = typeName;
-                        // Mappa il nome all'ID
-                        const typeId = typeMap[typeName] || null;
-                        if (typeId !== null) {
-                            option.setAttribute(config.dataAttribute, typeId.toString());
-                        }
-                        selectElement.appendChild(option);
-                    });
-                }
-            }
-            // Per reparto e mansione, usa la funzione che estrae nome e ID
-            else {
-                const uniqueValuesWithIds = getUniqueValuesWithIds(
-                    requests,
-                    config.nameKey,
-                    config.idKey,
-                    config.fallbackNameKey
-                );
-                
-                uniqueValuesWithIds.forEach(({ name, id }) => {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
-                    // Salva l'ID come attributo data-* se disponibile
-                    if (id !== null && id !== undefined) {
-                        option.setAttribute(config.dataAttribute, id.toString());
-                    }
-                    selectElement.appendChild(option);
-                });
-            }
-        }
+        // Ordina e crea opzioni
+        Array.from(uniqueItems.keys()).sort().forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            option.setAttribute(config.dataAttribute, uniqueItems.get(name));
+            select.appendChild(option);
+        });
 
-        // Ripristina la selezione precedente se ancora valida
-        if (currentValue && !isEmpty) {
-            const optionExists = Array.from(selectElement.options).some(
-                opt => opt.value === currentValue
-            );
-            if (optionExists) {
-                selectElement.value = currentValue;
-            } else {
-                // Se il valore precedente non esiste più, resetta a "Tutti"
-                selectElement.value = '';
-            }
-        } else {
-            // Se empty state o valore non valido, resetta a "Tutti"
-            selectElement.value = '';
-        }
-
-        // Gestisci empty state: disabilita il filtro se non ci sono dati
-        // IMPORTANTE: Non disabilitare i select se ci sono dati disponibili globalmente
-        // anche se l'array passato è vuoto (potrebbe essere filtrato)
-        const hasGlobalData = window.allRequestsData && Array.isArray(window.allRequestsData) && window.allRequestsData.length > 0;
-        selectElement.disabled = isEmpty && !hasGlobalData;
+        if(currentVal) select.value = currentVal;
     });
+
+    // Gestione speciale Filtro Stato (da status int a stringa)
+    const statusSelect = document.getElementById('filterStato');
+    if(statusSelect) {
+        const currentVal = statusSelect.value;
+        statusSelect.innerHTML = '<option value="">Tutti</option>';
+        
+        const uniqueStatuses = new Set(requests.map(r => getStatusString(r.status)));
+        uniqueStatuses.forEach(statusStr => {
+            const option = document.createElement('option');
+            option.value = statusStr;
+            option.textContent = statusStr;
+            statusSelect.appendChild(option);
+        });
+        if(currentVal) statusSelect.value = currentVal;
+    }
 }
 
 /**
@@ -1015,8 +922,16 @@ async function handleFilterChange() {
         updateActiveFiltersChips();
         updateResetButtonState();
         
+        // Abilita i filtri dopo il caricamento dei dati (solo se c'è un periodo selezionato)
+        if (window.selectedPeriod && window.selectedPeriod.startDate && window.selectedPeriod.endDate) {
+            setFiltersEnabled(true);
+        }
+        
     } catch (error) {
         console.error('Errore nel caricamento dati:', error);
+        
+        // Disabilita i filtri in caso di errore
+        setFiltersEnabled(false);
         
         // Mostra messaggio di errore
         const approvalList = document.getElementById('approvalList');
@@ -1201,58 +1116,52 @@ function sortRequests(requests, sortType) {
 /**
  * Renderizza la lista delle richieste filtrate raggruppate per reparto
  * @param {Array} data - Array di dati da renderizzare
- */
+ * Modifica renderList per gestire il raggruppamento con i nuovi campi
+ */ 
 function renderList(data) {
-    const approvalList = document.getElementById('approvalList');
-    if (!approvalList) return;
+    const list = document.getElementById('approvalList');
+    if (!list) return;
+    list.innerHTML = '';
 
-    // Svuota il contenitore
-    approvalList.innerHTML = '';
-
-    // Se non ci sono risultati, mostra un messaggio
     if (data.length === 0) {
-        const noResults = document.createElement('div');
-        noResults.className = 'text-center py-4 text-muted';
-        noResults.style.fontSize = '10px';
-        noResults.textContent = 'Nessuna richiesta trovata con i filtri selezionati.';
-        approvalList.appendChild(noResults);
+        list.innerHTML = '<div class="text-center py-4 text-muted">Nessuna richiesta trovata.</div>';
         return;
     }
 
-    // Raggruppa le richieste per reparto
-    // Nota: i dati arrivano già ordinati dal backend, l'ordine viene mantenuto durante il raggruppamento
-    const groupedByReparto = {};
-    data.forEach(function(requestData) {
-        // Preferire department_name, fallback a reparto
-        const reparto = requestData.department_name || requestData.reparto || 'Altro';
-        if (!groupedByReparto[reparto]) {
-            groupedByReparto[reparto] = [];
-        }
-        groupedByReparto[reparto].push(requestData);
+    // Filtro locale lato client (se necessario per far funzionare la UI subito senza backend reale)
+    // Questo è utile se i dati in memoria sono quelli "grezzi" e i filtri UI devono agire su quelli
+    const searchVal = document.getElementById('filterSearch')?.value.toLowerCase();
+    const typeVal = document.getElementById('filterType')?.value;
+    const statoVal = document.getElementById('filterStato')?.value;
+    const repVal = document.getElementById('filterReparto')?.value;
+    
+    const filtered = data.filter(item => {
+        if(searchVal && !((item.nominativo || item.nome).toLowerCase().includes(searchVal))) return false;
+        if(typeVal && (item.type_name || item.tipo_richiesta) !== typeVal) return false;
+        if(statoVal && getStatusString(item.status) !== statoVal) return false;
+        if(repVal && (item.department_name || item.reparto) !== repVal) return false;
+        return true;
     });
 
-    // Ordina i reparti alfabeticamente
-    const sortedReparti = Object.keys(groupedByReparto).sort((a, b) => {
-        return a.localeCompare(b, 'it', { sensitivity: 'base' });
+    const groups = {};
+    filtered.forEach(req => {
+        const rep = req.department_name || req.reparto || 'Altro';
+        if (!groups[rep]) groups[rep] = [];
+        groups[rep].push(req);
     });
 
-    // Renderizza ogni gruppo con la sua etichetta
-    sortedReparti.forEach(function(reparto) {
-        // Crea etichetta di sezione per il reparto
-        const sectionLabel = document.createElement('div');
-        sectionLabel.className = 'reparto-section-label';
-        sectionLabel.textContent = reparto.toUpperCase();
-        approvalList.appendChild(sectionLabel);
+    Object.keys(groups).sort().forEach(rep => {
+        const label = document.createElement('div');
+        label.className = 'reparto-section-label';
+        label.textContent = rep.toUpperCase();
+        list.appendChild(label);
 
-        // Renderizza le richieste del reparto
-        groupedByReparto[reparto].forEach(function(requestData) {
-            const row = createApprovalRow(requestData);
-            approvalList.appendChild(row);
+        groups[rep].forEach(req => {
+            list.appendChild(createApprovalRow(req));
         });
     });
-
-    // Inizializza gli observer per le ombre dinamiche
-    initHeaderShadows();
+    
+    if(typeof initHeaderShadows === 'function') initHeaderShadows();
 }
 
 /**

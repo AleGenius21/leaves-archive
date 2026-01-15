@@ -193,9 +193,9 @@ async function fetchLeavesRequestsWithFilters(params) {
         // Costruisce query string con URLSearchParams
         const queryParams = new URLSearchParams();
         
-        // Gestisce status come array (status=1&status=2)
+        // Gestisce status come array serializzato (status=1,2)
         if (Array.isArray(params.status)) {
-            params.status.forEach(s => queryParams.append('status', s.toString()));
+            queryParams.append('status', params.status.join(','));
         } else if (params.status !== undefined) {
             queryParams.append('status', params.status.toString());
         }

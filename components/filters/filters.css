@@ -217,14 +217,13 @@
     gap: 8px;
     padding: 12px;
     background-color: #ffffff;
-    border-bottom: 1px solid #e0e0e0;
     width: 100%;
     box-sizing: border-box;
 }
 
 .periodo-presets-container .preset-btn {
     flex: 1;
-    padding: 1px 4px;
+    padding: 1px 3px;
     font-size: 0.85rem;
     color: #000000;
     background-color: #ffffff;

@@ -76,7 +76,12 @@ function loadPanelContent() {
                             <i class="bi bi-x-lg"></i>
                         </button>
                         <div class="panel-content">
-                            <div class="periodo-presets-container" id="periodoPresetsContainer">
+							<div class="periodo-presets-container" id="past_periodoPresetsContainer">
+								<button type="button" class="preset-btn" data-preset="last-month">Mese scorso</button>
+								<button type="button" class="preset-btn" data-preset="last-six-month">Ultimi 6 mesi</button>
+								<button type="button" class="preset-btn" data-preset="last-year">Anno scorso</button>
+							</div>
+                            <div class="periodo-presets-container" id="future_periodoPresetsContainer">
                                 <button type="button" class="preset-btn" data-preset="next-week">Prossima settimana</button>
                                 <button type="button" class="preset-btn" data-preset="next-15-days">Prossimi 15 giorni</button>
                                 <button type="button" class="preset-btn" data-preset="next-month">Prossimo mese</button>
@@ -230,16 +235,23 @@ function renderCalendar(data = null) {
 		});
 	});
 
-	// Aggiungi sempre il mese corrente e i prossimi 11 mesi (totale 12 mesi)
+	// Aggiungi sempre i mesi da gennaio 2024 fino a oggi + 12 mesi
 	const today = new Date();
 	const currentYear = today.getFullYear();
 	const currentMonth = today.getMonth(); // 0-11
+	
+	// Data di inizio: gennaio 2024
+	const startYear = 2024;
+	const startMonth = 0; // Gennaio
+	
+	// Calcola il numero totale di mesi da mostrare: da gennaio 2024 a oggi + 12 mesi
+	const totalMonths = (currentYear - startYear) * 12 + currentMonth + 12;
 
-	for (let i = 0; i < 12; i++) {
-		const month = currentMonth + i;
+	for (let i = 0; i < totalMonths; i++) {
+		const month = startMonth + i;
 
 		// Gestisci il cambio anno
-		const actualYear = currentYear + Math.floor(month / 12);
+		const actualYear = startYear + Math.floor(month / 12);
 		const actualMonth = month % 12;
 
 		const monthKey = `${actualYear}-${actualMonth}`;
@@ -283,31 +295,28 @@ function renderCalendar(data = null) {
 		}
 	}
 
-	// Filtra i mesi per mostrare solo dal mese corrente in poi (riutilizza currentYear e currentMonth già dichiarate)
-	const filteredMonths = Array.from(monthsMap.values()).filter(monthData => {
-		// Includi solo mesi dal mese corrente in poi
-		if (monthData.year > currentYear) {
-			return true;
-		}
-		if (monthData.year === currentYear && monthData.month >= currentMonth) {
-			return true;
-		}
-		return false;
-	});
-
 	// Ordina i mesi cronologicamente (dal più vecchio al più recente)
-	const sortedMonths = filteredMonths.sort((a, b) => {
+	const sortedMonths = Array.from(monthsMap.values()).sort((a, b) => {
 		if (a.year !== b.year) {
 			return a.year - b.year;
 		}
 		return a.month - b.month;
 	});
 
-	// Genera calendario per ogni mese
+	// Genera calendario per ogni mese in ordine cronologico
 	sortedMonths.forEach(monthData => {
 		const monthCalendar = generateMonthCalendar(monthData.year, monthData.month, monthData.requests, currentRequestData);
 		calendarContainer.appendChild(monthCalendar);
 	});
+
+	// Scrolla automaticamente al mese corrente (solo al primo rendering)
+	// Usa lo stesso meccanismo dei preset buttons
+	if (!window.calendarInitialized) {
+		window.calendarInitialized = true;
+		setTimeout(() => {
+			scrollToDate(today, true); // true = senza animazione al primo rendering
+		}, 100);
+	}
 }
 
 /**
@@ -750,56 +759,79 @@ function clearPeriodSelection() {
 
 /**
  * Applica un preset al periodo
- * @param {string} preset - Tipo di preset ('next-week', 'next-15-days', 'next-month')
+ * @param {string} preset - Nome del preset ('next-week', 'next-15-days', 'next-month', ecc.)
  */
 function applyPeriodoPreset(preset) {
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-	let startDate, endDate;
+    let startDate, endDate;
 
-	switch (preset) {
-		case 'next-week':
-			// Prossima settimana (dal lunedì prossimo alla domenica)
-			const daysUntilMonday = (8 - today.getDay()) % 7 || 7;
-			startDate = new Date(today);
-			startDate.setDate(today.getDate() + daysUntilMonday);
-			endDate = new Date(startDate);
-			endDate.setDate(startDate.getDate() + 6);
-			break;
-		case 'next-15-days':
-			// Prossimi 15 giorni (da oggi)
-			startDate = new Date(today);
-			endDate = new Date(today);
-			endDate.setDate(today.getDate() + 14);
-			break;
-		case 'next-month':
-			// Prossimo mese (dal primo all'ultimo giorno del prossimo mese)
-			startDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-			endDate = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-			break;
-		default:
-			return;
-	}
+    switch (preset) {
+        // --- NUOVI PRESET (PAST) ---
+        case 'last-month':
+            // Mese scorso: dal primo all'ultimo giorno del mese precedente
+            startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
 
-	// Normalizza le date
-	startDate.setHours(0, 0, 0, 0);
-	endDate.setHours(23, 59, 59, 999);
+        case 'last-six-month':
+            // Ultimi 6 mesi: da 6 mesi fa ad oggi
+            startDate = new Date(today);
+            startDate.setMonth(today.getMonth() - 6);
+            endDate = new Date(today);
+            break;
 
-	// Applica il filtro periodo
-	applyPeriodFilter(startDate, endDate);
+        case 'last-year':
+            // Anno scorso: dal 1° Gennaio al 31 Dicembre dell'anno precedente
+            const lastYear = today.getFullYear() - 1;
+            startDate = new Date(lastYear, 0, 1);
+            endDate = new Date(lastYear, 11, 31);
+            break;
 
-	// Scrolla il calendario alla data di inizio se necessario
-	setTimeout(() => {
-		scrollToDate(startDate);
-	}, 100);
+        // --- PRESET ESISTENTI (FUTURE) ---
+        case 'next-week':
+            const daysUntilMonday = (8 - today.getDay()) % 7 || 7;
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() + daysUntilMonday);
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            break;
+
+        case 'next-15-days':
+            startDate = new Date(today);
+            endDate = new Date(today);
+            endDate.setDate(today.getDate() + 14);
+            break;
+
+        case 'next-month':
+            startDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+            endDate = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+            break;
+
+        default:
+            return;
+    }
+
+    // Normalizza le date
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Applica il filtro periodo
+    applyPeriodFilter(startDate, endDate);
+
+    // Scrolla il calendario alla data di inizio se necessario
+    setTimeout(() => {
+        scrollToDate(startDate);
+    }, 100);
 }
 
 /**
  * Scrolla il calendario alla data specificata
  * @param {Date} date - Data a cui scrollare
+ * @param {boolean} instant - Se true, usa behavior: 'auto' (senza animazione), altrimenti 'smooth'
  */
-function scrollToDate(date) {
+function scrollToDate(date, instant = false) {
 	const calendarContainer = document.getElementById('calendarContainer');
 	if (!calendarContainer) return;
 
@@ -815,7 +847,11 @@ function scrollToDate(date) {
 				'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
 			const headerText = `${monthNames[month]} ${year}`;
 			if (monthHeader.textContent === headerText) {
-				monthCalendar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				// Usa 'center' per mostrare il mese interamente visibile, 'auto' per il primo rendering senza animazione
+				monthCalendar.scrollIntoView({ 
+					behavior: instant ? 'auto' : 'smooth', 
+					block: 'center' 
+				});
 			}
 		}
 	});
@@ -825,21 +861,30 @@ function scrollToDate(date) {
  * Setup event listeners per i preset buttons
  */
 function setupPresetButtons() {
-	const presetContainer = document.getElementById('periodoPresetsContainer');
-	if (!presetContainer) return;
+    // Selezioniamo tutti i contenitori di preset
+    const presetContainers = document.querySelectorAll('.periodo-presets-container');
+    
+    presetContainers.forEach(container => {
+        const presetButtons = container.querySelectorAll('.preset-btn');
 
-	const presetButtons = presetContainer.querySelectorAll('.preset-btn');
-	presetButtons.forEach(btn => {
-		btn.addEventListener('click', function (e) {
-			e.stopPropagation();
-			// Rimuovi classe active da tutti i preset
-			presetButtons.forEach(b => b.classList.remove('active'));
-			// Aggiungi classe active al preset cliccato
-			this.classList.add('active');
-			const preset = this.getAttribute('data-preset');
-			applyPeriodoPreset(preset);
-		});
-	});
+        presetButtons.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+
+                // Rimuovi la classe active SOLO dai bottoni dentro questo specifico contenitore
+                presetButtons.forEach(b => b.classList.remove('active'));
+                
+                // Aggiungi classe active al preset cliccato
+                this.classList.add('active');
+
+                const preset = this.getAttribute('data-preset');
+                
+                // Applichiamo il preset (la logica di applyPeriodoPreset 
+                // gestirà la differenza tra 'last-month' e 'next-month')
+                applyPeriodoPreset(preset);
+            });
+        });
+    });
 }
 
 // Esponi funzioni globalmente per accesso da altri componenti

@@ -266,16 +266,18 @@
 
 /* Sunday circle - cerchio rosso per domeniche */
 .calendar-day-number.sunday {
-    width: 1.3rem;
-    height: 1.3rem;
-    min-width: 1.3rem; /* Assicura dimensioni fisse */
-    min-height: 1.3rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    min-width: 1.5rem; /* Assicura dimensioni fisse */
+    min-height: 1.5rem;
     border: 1.5px solid #f87171; /* Rosso più tenue e meno impattante */
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* align-self: flex-start è già ereditato dalla classe base, mantiene posizione in alto a sinistra */
+    box-sizing: border-box; /* Include il bordo nel calcolo delle dimensioni */
+    margin: 0; /* Rimuove margini di default */
+    padding: 0; /* Rimuove padding di default */
     text-align: center; /* Centra il testo del numero dentro il cerchio */
     line-height: 1; /* Rimuove spazio extra sopra/sotto il numero */
 }

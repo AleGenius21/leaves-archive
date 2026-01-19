@@ -41,6 +41,7 @@ body {
     flex: 1;
     overflow: hidden;
     min-height: 0;
+    position: relative; /* Necessario per il posizionamento assoluto del detail-panel quando diventa overlay */
 }
 
 /* Sezione lista (sinistra) */
@@ -56,7 +57,15 @@ body {
 
 .list-section.panel-open {
     width: 64%;
-	min-width: 600px;
+    min-width: 600px;
+}
+
+/* Quando il panel diventa overlay (schermo < 980px), la lista occupa tutto lo spazio */
+@media (max-width: 980px) {
+    .list-section.panel-open {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 /* Filter Bar Container - occupa tutta la larghezza, sopra il main-container */

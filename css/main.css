@@ -55,7 +55,8 @@ body {
 }
 
 .list-section.panel-open {
-    width: 50%;
+    width: 64%;
+	min-width: 600px;
 }
 
 /* Filter Bar Container - occupa tutta la larghezza, sopra il main-container */

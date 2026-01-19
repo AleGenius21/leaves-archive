@@ -562,7 +562,7 @@ function generateMonthCalendar(year, month, requests, selectedRequest) {
  * @param {number} month - Mese (0-11)
  * @param {number} day - Giorno
  */
-function handleDayClick(year, month, day) {
+async function handleDayClick(year, month, day) {
 	// Crea oggetto Date per il giorno selezionato
 	const selectedDate = new Date(year, month, day);
 	selectedDate.setHours(0, 0, 0, 0);
@@ -587,7 +587,7 @@ function handleDayClick(year, month, day) {
 			selectedPeriodEnd = temp;
 		}
 		// Applica il filtro periodo
-		applyPeriodFilter(selectedPeriodStart, selectedPeriodEnd);
+		await applyPeriodFilter(selectedPeriodStart, selectedPeriodEnd);
 	} else {
 		// 3° click: resetta e imposta nuova data di inizio
 		selectedPeriodStart = new Date(selectedDate);
@@ -623,7 +623,7 @@ function handleDayClick(year, month, day) {
  * @param {Date} startDate - Data inizio periodo
  * @param {Date} endDate - Data fine periodo
  */
-function applyPeriodFilter(startDate, endDate) {
+async function applyPeriodFilter(startDate, endDate) {
 	// Normalizza le date
 	const normalizedStart = new Date(startDate);
 	normalizedStart.setHours(0, 0, 0, 0);
@@ -698,10 +698,32 @@ function applyPeriodFilter(startDate, endDate) {
 		});
 	}
 
-	// Aggiorna le opzioni dei filtri basandosi SOLO sulle richieste del periodo selezionato
-	// IMPORTANTE: Chiamare dopo hideFilterSpinner per assicurarsi che i select siano accessibili
-	if (typeof window.updateFilterOptions === 'function') {
-		window.updateFilterOptions(periodFilteredData);
+	// Ripristina i filtri dalla configurazione API invece di usarli dai dati filtrati
+	// I filtri devono sempre mostrare tutte le opzioni disponibili dalla configurazione,
+	// non solo quelle presenti nel periodo selezionato
+	if (typeof window.fetchLeaveAdminScreenConfig === 'function' && typeof window.buildFiltersFromConfig === 'function') {
+		try {
+			const configData = await window.fetchLeaveAdminScreenConfig();
+			if (configData && typeof configData === 'object') {
+				window.buildFiltersFromConfig(configData);
+			} else {
+				// Fallback: ripristina almeno il filtro Stato se la configurazione non è disponibile
+				if (typeof window.buildStatusFilter === 'function') {
+					window.buildStatusFilter();
+				}
+			}
+		} catch (error) {
+			console.warn('[DETAIL-PANEL] Errore nel ripristino filtri da config:', error);
+			// Fallback: ripristina almeno il filtro Stato
+			if (typeof window.buildStatusFilter === 'function') {
+				window.buildStatusFilter();
+			}
+		}
+	} else {
+		// Fallback: ripristina almeno il filtro Stato se le funzioni non sono disponibili
+		if (typeof window.buildStatusFilter === 'function') {
+			window.buildStatusFilter();
+		}
 	}
 
 	// Abilita i filtri solo se i dati sono stati caricati con successo
@@ -761,7 +783,7 @@ function clearPeriodSelection() {
  * Applica un preset al periodo
  * @param {string} preset - Nome del preset ('next-week', 'next-15-days', 'next-month', ecc.)
  */
-function applyPeriodoPreset(preset) {
+async function applyPeriodoPreset(preset) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -818,7 +840,7 @@ function applyPeriodoPreset(preset) {
     endDate.setHours(23, 59, 59, 999);
 
     // Applica il filtro periodo
-    applyPeriodFilter(startDate, endDate);
+    await applyPeriodFilter(startDate, endDate);
 
     // Scrolla il calendario alla data di inizio se necessario
     setTimeout(() => {

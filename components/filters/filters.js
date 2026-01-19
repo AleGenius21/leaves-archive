@@ -23,6 +23,42 @@ window.allRequestsData = allRequestsData;
 window.filteredRequestsData = filteredRequestsData;
 
 /**
+ * Recupera la configurazione dello schermo admin per le richieste di ferie/permessi
+ * @returns {Promise<Object>} Promise che risolve con l'oggetto di configurazione
+ */
+async function fetchLeaveAdminScreenConfig() {
+    try {
+        const url = `${API_BASE_URL}/leave_admin_screen_config`;
+        console.log('[FILTERS] Chiamata a /leave_admin_screen_config:', url);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_BEARER_TOKEN}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Errore HTTP: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        // Verifica struttura risposta API
+        if (!result || typeof result !== 'object') {
+            throw new Error('Risposta API non valida: formato non riconosciuto');
+        }
+
+        console.log('[FILTERS] Configurazione ricevuta:', result);
+        return result;
+    } catch (error) {
+        console.error('[FILTERS] Errore nel recupero della configurazione:', error);
+        throw error;
+    }
+}
+
+/**
  * Carica dinamicamente il contenuto HTML del componente filter bar
  * @returns {Promise} Promise che si risolve quando il contenuto è stato caricato
  */
@@ -139,14 +175,26 @@ function buildApiParams() {
         }
     }
 
-    // Stato - usa valore testuale (non ha ID)
+    // Stato - estrae da attributo data-status-id
     const statoSelect = document.getElementById('filterStato');
     if (statoSelect && statoSelect.value) {
-        // Lo stato viene filtrato lato backend usando il valore testuale
-        // Non inviamo status_id perché lo stato è già gestito nel filtro status: [1, 2]
-        // Se necessario, possiamo aggiungere un filtro aggiuntivo per stato specifico
-        // Per ora manteniamo solo il filtro status: [1, 2] per archivio
+        const statoOption = statoSelect.selectedOptions[0];
+        if (statoOption) {
+            // Prova a leggere l'ID dall'attributo data-status-id
+            const statusIdAttr = statoOption.getAttribute('data-status-id');
+            if (statusIdAttr) {
+                // Imposta params.status come array contenente solo l'ID selezionato
+                params.status = [parseInt(statusIdAttr, 10)];
+            } else {
+                // Fallback: usa il valore direttamente se è numerico
+                const statusValue = parseInt(statoSelect.value, 10);
+                if (!isNaN(statusValue)) {
+                    params.status = [statusValue];
+                }
+            }
+        }
     }
+    // Se nessuno stato è selezionato, params.status rimane [1, 2] (default archivio)
 
     // Periodo (data_inizio e data_fine) - da window.selectedPeriod
     if (window.selectedPeriod && window.selectedPeriod.startDate && window.selectedPeriod.endDate) {
@@ -303,29 +351,64 @@ async function initFilterBar(requestsData = []) {
         }
     }
 
+    // Popola il filtro Stato con valori hardcodati (sempre disponibile)
+    buildStatusFilter();
+
     // Setup event listeners
     setupFilterListeners();
 
     // Disabilita i filtri all'avvio (verranno abilitati solo quando viene selezionato un periodo)
     setFiltersEnabled(false);
 
-    // CHIAMATA MASTER: Carica tutte le opzioni possibili per i filtri (senza filtri applicati)
-    // Questa chiamata serve solo per popolare le dropdown con tutte le opzioni disponibili
+    // CARICAMENTO CONFIGURAZIONE: Carica prima la configurazione per popolare i filtri
+    // Se configData è fornito, costruisci i filtri dalla configurazione
+    let configData = null;
     try {
         showFilterSpinner();
+        console.log('[FILTERS] Caricamento configurazione da /leave_admin_screen_config');
+        configData = await fetchLeaveAdminScreenConfig();
         
-        const masterParams = { status: [1, 2] }; // Solo status archivio, nessun altro filtro
-        const masterData = await fetchLeavesRequestsWithFilters(masterParams);
-        
-        // Salva i dati completi per le opzioni dei filtri (immutabili)
-        filterOptionsData = [...masterData];
-        
-        // Popola dinamicamente tutti i filtri con tutte le opzioni possibili
-        updateFilterOptions(filterOptionsData);
-        
+        if (configData && typeof configData === 'object') {
+            console.log('[FILTERS] Costruzione filtri da config:', configData);
+            const configSuccess = buildFiltersFromConfig(configData);
+            if (!configSuccess) {
+                console.warn('[FILTERS] buildFiltersFromConfig non ha popolato alcun filtro, uso fallback');
+                // Fallback: carica opzioni dai dati delle richieste
+                const masterParams = { status: [1, 2] };
+                const masterData = await fetchLeavesRequestsWithFilters(masterParams);
+                filterOptionsData = [...masterData];
+                updateFilterOptions(filterOptionsData);
+                // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
+                buildStatusFilter();
+            }
+        } else {
+            console.warn('[FILTERS] configData non valido, uso fallback');
+            // Fallback: carica opzioni dai dati delle richieste
+            const masterParams = { status: [1, 2] };
+            const masterData = await fetchLeavesRequestsWithFilters(masterParams);
+            filterOptionsData = [...masterData];
+            updateFilterOptions(filterOptionsData);
+            // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
+            buildStatusFilter();
+        }
     } catch (error) {
-        console.error('Errore nel caricamento opzioni filtri:', error);
-        // Continua comunque, anche se le opzioni non sono state caricate
+        console.warn('[FILTERS] Errore nel caricamento della configurazione, uso fallback:', error);
+        // Fallback: carica opzioni dai dati delle richieste
+        try {
+            const masterParams = { status: [1, 2] }; // Solo status archivio, nessun altro filtro
+            const masterData = await fetchLeavesRequestsWithFilters(masterParams);
+            
+            // Salva i dati completi per le opzioni dei filtri (immutabili)
+            filterOptionsData = [...masterData];
+            
+            // Popola dinamicamente tutti i filtri con tutte le opzioni possibili
+            updateFilterOptions(filterOptionsData);
+            // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
+            buildStatusFilter();
+        } catch (fallbackError) {
+            console.error('[FILTERS] Errore anche nel fallback:', fallbackError);
+            // Continua comunque, anche se le opzioni non sono state caricate
+        }
     } finally {
         hideFilterSpinner();
     }
@@ -473,6 +556,239 @@ function getStatusString(status) {
     if (status === 2) return 'Rifiutato';
     if (status === 0) return 'In Attesa';
     return 'Sconosciuto';
+}
+
+/**
+ * Popola il filtro Stato con valori hardcodati (1=Approvato, 2=Rifiutato)
+ * @returns {boolean} True se il filtro è stato popolato con successo
+ */
+function buildStatusFilter() {
+    const statoSelect = document.getElementById('filterStato');
+    if (!statoSelect) {
+        console.warn('[FILTERS] buildStatusFilter: filterStato non trovato nel DOM');
+        return false;
+    }
+
+    // Salva il valore corrente selezionato
+    const currentValue = statoSelect.value;
+
+    // Svuota le opzioni mantenendo solo "Tutti"
+    statoSelect.innerHTML = '';
+    const newDefaultOption = document.createElement('option');
+    newDefaultOption.value = '';
+    newDefaultOption.textContent = 'Tutti';
+    statoSelect.appendChild(newDefaultOption);
+
+    // Aggiungi opzione Approvato (status = 1)
+    const approvatoOption = document.createElement('option');
+    approvatoOption.value = '1';
+    approvatoOption.textContent = 'Approvato';
+    approvatoOption.setAttribute('data-status-id', '1');
+    statoSelect.appendChild(approvatoOption);
+
+    // Aggiungi opzione Rifiutato (status = 2)
+    const rifiutatoOption = document.createElement('option');
+    rifiutatoOption.value = '2';
+    rifiutatoOption.textContent = 'Rifiutato';
+    rifiutatoOption.setAttribute('data-status-id', '2');
+    statoSelect.appendChild(rifiutatoOption);
+
+    // Ripristina la selezione precedente se ancora valida
+    if (currentValue) {
+        const optionExists = Array.from(statoSelect.options).some(
+            opt => opt.value === currentValue
+        );
+        if (optionExists) {
+            statoSelect.value = currentValue;
+        } else {
+            statoSelect.value = '';
+        }
+    } else {
+        statoSelect.value = '';
+    }
+
+    statoSelect.disabled = false;
+    console.log('[FILTERS] Filtro Stato popolato con valori hardcodati');
+    return true;
+}
+
+/**
+ * Costruisce i filtri Tipo, Reparto e Mansione dai dati della configurazione
+ * @param {Object} configData - Dati di configurazione da /leave_admin_screen_config
+ *   - types: Array di {type_id, type_name}
+ *   - blocks: Array di {code, pretty_name, color}
+ *   - tasks: Array di oggetti con task_id, task_name/name/pretty_name
+ * @returns {boolean} True se almeno un filtro è stato popolato con successo
+ */
+function buildFiltersFromConfig(configData) {
+    if (!configData || typeof configData !== 'object') {
+        console.warn('[FILTERS] buildFiltersFromConfig: configData non valido, salto la costruzione dei filtri da config');
+        return false;
+    }
+
+    let success = false;
+
+    // Popola filtro Tipo da configData.types
+    const tipoSelect = document.getElementById('filterType');
+    if (tipoSelect && Array.isArray(configData.types) && configData.types.length > 0) {
+        // Salva il valore corrente selezionato
+        const currentValue = tipoSelect.value;
+
+        // Svuota le opzioni mantenendo solo "Tutti"
+        tipoSelect.innerHTML = '';
+        const newDefaultOption = document.createElement('option');
+        newDefaultOption.value = '';
+        newDefaultOption.textContent = 'Tutti';
+        tipoSelect.appendChild(newDefaultOption);
+
+        // Aggiungi opzioni da configData.types
+        configData.types.forEach(function(type) {
+            if (type && type.type_id !== undefined && type.type_name) {
+                const option = document.createElement('option');
+                option.value = type.type_name;
+                option.textContent = type.type_name;
+                option.setAttribute('data-type-id', type.type_id.toString());
+                tipoSelect.appendChild(option);
+            }
+        });
+
+        // Ripristina la selezione precedente se ancora valida
+        if (currentValue) {
+            const optionExists = Array.from(tipoSelect.options).some(
+                opt => opt.value === currentValue
+            );
+            if (optionExists) {
+                tipoSelect.value = currentValue;
+            } else {
+                tipoSelect.value = '';
+            }
+        } else {
+            tipoSelect.value = '';
+        }
+
+        tipoSelect.disabled = false;
+        console.log('[FILTERS] Filtro Tipo popolato da config:', configData.types.length, 'opzioni');
+        success = true;
+    } else if (tipoSelect) {
+        // Se types non è presente o è vuoto, mantieni il filtro come è (non disabilitare)
+        console.warn('[FILTERS] configData.types vuoto o non presente, mantengo filtro Tipo esistente');
+    }
+
+    // Popola filtro Reparto da configData.blocks
+    const repartoSelect = document.getElementById('filterReparto');
+    if (repartoSelect && Array.isArray(configData.blocks) && configData.blocks.length > 0) {
+        // Salva il valore corrente selezionato
+        const currentValue = repartoSelect.value;
+
+        // Svuota le opzioni mantenendo solo "Tutti"
+        repartoSelect.innerHTML = '';
+        const newDefaultOption = document.createElement('option');
+        newDefaultOption.value = '';
+        newDefaultOption.textContent = 'Tutti';
+        repartoSelect.appendChild(newDefaultOption);
+
+        // Aggiungi opzioni da configData.blocks
+        configData.blocks.forEach(function(block) {
+            if (block && block.code !== undefined && block.pretty_name) {
+                const option = document.createElement('option');
+                option.value = block.pretty_name;
+                option.textContent = block.pretty_name;
+                // Usa code come department_id (potrebbe essere necessario mappare in futuro)
+                option.setAttribute('data-department-id', block.code.toString());
+                // Salva anche il colore per uso futuro
+                if (block.color) {
+                    option.setAttribute('data-color', block.color);
+                }
+                repartoSelect.appendChild(option);
+            }
+        });
+
+        // Ripristina la selezione precedente se ancora valida
+        if (currentValue) {
+            const optionExists = Array.from(repartoSelect.options).some(
+                opt => opt.value === currentValue
+            );
+            if (optionExists) {
+                repartoSelect.value = currentValue;
+            } else {
+                repartoSelect.value = '';
+            }
+        } else {
+            repartoSelect.value = '';
+        }
+
+        repartoSelect.disabled = false;
+        console.log('[FILTERS] Filtro Reparto popolato da config:', configData.blocks.length, 'opzioni');
+        success = true;
+    } else if (repartoSelect) {
+        // Se blocks è vuoto o non presente, mantieni il filtro come è (non disabilitare per retrocompatibilità)
+        console.warn('[FILTERS] configData.blocks vuoto o non presente, mantengo filtro Reparto esistente');
+    }
+
+    // Popola filtro Mansione da configData.tasks
+    const mansioneSelect = document.getElementById('filterMansione');
+    if (mansioneSelect && Array.isArray(configData.tasks) && configData.tasks.length > 0) {
+        // Salva il valore corrente selezionato
+        const currentValue = mansioneSelect.value;
+
+        // Svuota le opzioni mantenendo solo "Tutti"
+        mansioneSelect.innerHTML = '';
+        const newDefaultOption = document.createElement('option');
+        newDefaultOption.value = '';
+        newDefaultOption.textContent = 'Tutti';
+        mansioneSelect.appendChild(newDefaultOption);
+
+        // Aggiungi opzioni da configData.tasks
+        // Struttura tasks da verificare: assumiamo simile a blocks con task_id, task_name, color
+        configData.tasks.forEach(function(task) {
+            if (task) {
+                // Supporta diverse strutture possibili
+                const taskId = task.task_id !== undefined ? task.task_id : 
+                              (task.id !== undefined ? task.id : null);
+                const taskName = task.task_name || task.name || task.pretty_name || null;
+                
+                if (taskName) {
+                    const option = document.createElement('option');
+                    option.value = taskName;
+                    option.textContent = taskName;
+                    if (taskId !== null && taskId !== undefined) {
+                        option.setAttribute('data-task-id', taskId.toString());
+                    }
+                    // Salva anche il colore per uso futuro
+                    if (task.color) {
+                        option.setAttribute('data-color', task.color);
+                    }
+                    mansioneSelect.appendChild(option);
+                }
+            }
+        });
+
+        // Ripristina la selezione precedente se ancora valida
+        if (currentValue) {
+            const optionExists = Array.from(mansioneSelect.options).some(
+                opt => opt.value === currentValue
+            );
+            if (optionExists) {
+                mansioneSelect.value = currentValue;
+            } else {
+                mansioneSelect.value = '';
+            }
+        } else {
+            mansioneSelect.value = '';
+        }
+
+        mansioneSelect.disabled = false;
+        console.log('[FILTERS] Filtro Mansione popolato da config:', configData.tasks.length, 'opzioni');
+        success = true;
+    } else if (mansioneSelect) {
+        // Se tasks è vuoto o non presente, mantieni il filtro come è (non disabilitare per retrocompatibilità)
+        console.warn('[FILTERS] configData.tasks vuoto o non presente, mantengo filtro Mansione esistente');
+    }
+
+    // Popola sempre il filtro Stato con valori hardcodati
+    buildStatusFilter();
+
+    return success;
 }
 
 /**
@@ -1509,6 +1825,12 @@ window.hideFilterSpinner = hideFilterSpinner;
 // Esponi updateFilterOptions globalmente per accesso da altri componenti
 window.updateFilterOptions = updateFilterOptions;
 
+// Esponi fetchLeaveAdminScreenConfig globalmente per accesso da altri componenti
+window.fetchLeaveAdminScreenConfig = fetchLeaveAdminScreenConfig;
+
+// Esponi buildFiltersFromConfig globalmente per accesso da altri componenti
+window.buildFiltersFromConfig = buildFiltersFromConfig;
+
 /**
  * Mostra spinner nella lista
  */
@@ -1720,9 +2042,9 @@ async function loadDayData(selectedDate) {
 window.loadAndDisplayDayData = loadAndDisplayDayData;
 
 /**
- * Resetta tutti i filtri
+ * Resetta tutti i filtri e ricostruisce i filtri dalla configurazione (come all'inizializzazione)
  */
-function clearAllFilters() {
+async function clearAllFilters() {
     // Reset ricerca
     const searchInput = document.getElementById('filterSearch');
     if (searchInput) searchInput.value = '';
@@ -1734,6 +2056,8 @@ function clearAllFilters() {
     // Reset stato
     const statoSelect = document.getElementById('filterStato');
     if (statoSelect) statoSelect.value = '';
+    // Ripristina il filtro Stato con valori hardcodati dopo il reset
+    buildStatusFilter();
 
     // Reset reparto
     const repartoSelect = document.getElementById('filterReparto');
@@ -1752,6 +2076,42 @@ function clearAllFilters() {
     // Reset ordinamento
     const sortSelect = document.getElementById('filterSort');
     if (sortSelect) sortSelect.value = 'data-recente';
+
+    // Ricostruisci i filtri dalla configurazione (come all'inizializzazione)
+    try {
+        if (typeof fetchLeaveAdminScreenConfig === 'function') {
+            console.log('[FILTERS] Reset filtri: ricarico configurazione');
+            const configData = await fetchLeaveAdminScreenConfig();
+            if (configData && typeof configData === 'object') {
+                console.log('[FILTERS] Reset filtri: ricostruisco filtri da config');
+                buildFiltersFromConfig(configData);
+            } else {
+                console.warn('[FILTERS] Reset filtri: configData non valido, uso fallback');
+                // Fallback: usa updateFilterOptions se config non disponibile
+                if (filterOptionsData && filterOptionsData.length > 0) {
+                    updateFilterOptions(filterOptionsData);
+                    // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
+                    buildStatusFilter();
+                }
+            }
+        } else {
+            console.warn('[FILTERS] Reset filtri: fetchLeaveAdminScreenConfig non disponibile, uso fallback');
+            // Fallback: usa updateFilterOptions se config non disponibile
+            if (filterOptionsData && filterOptionsData.length > 0) {
+                updateFilterOptions(filterOptionsData);
+                // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
+                buildStatusFilter();
+            }
+        }
+    } catch (error) {
+        console.error('[FILTERS] Reset filtri: errore nel caricamento config, uso fallback:', error);
+        // Fallback: usa updateFilterOptions se config non disponibile
+        if (filterOptionsData && filterOptionsData.length > 0) {
+            updateFilterOptions(filterOptionsData);
+            // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
+            buildStatusFilter();
+        }
+    }
 
     // Applica filtri resettati
     handleFilterChange();

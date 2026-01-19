@@ -338,116 +338,60 @@ async function fetchLeavesRequestsWithFilters(params) {
  * @param {Array} requestsData - Array completo dei dati delle richieste (deprecato - non più utilizzato)
  */
 async function initFilterBar(requestsData = []) {
-    // Carica il contenuto HTML del componente se non è già presente
+    // Carica il contenuto HTML
     try {
         await loadFilterBarHTML();
     } catch (error) {
         console.error('Impossibile caricare il componente filter bar:', error);
-        // Se il caricamento fallisce, prova a continuare se il markup esiste già nel DOM
-        const existingContainer = document.querySelector('.filter-bar-container');
-        if (!existingContainer) {
-            console.error('Il componente filter bar non è disponibile');
+        return;
+    }
+
+    // Popola lo stato iniziale
+    buildStatusFilter();
+    setupFilterListeners();
+
+    // 1. DISABILITA TUTTO ALL'AVVIO
+    setFiltersEnabled(false);
+
+    // Carica configurazione filtri
+    let configData = null;
+    try {
+        showFilterSpinner();
+        configData = await fetchLeaveAdminScreenConfig();
+        
+        if (configData && typeof configData === 'object') {
+            buildFiltersFromConfig(configData);
+        } else {
+            // Fallback se config fallisce
+            if (allRequestsData.length > 0) {
+                updateFilterOptions(allRequestsData);
+                buildStatusFilter();
+            }
+        }
+    } catch (error) {
+        console.warn('Errore config, uso fallback:', error);
+        if (allRequestsData.length > 0) {
+            updateFilterOptions(allRequestsData);
+            buildStatusFilter();
+        }
+    } finally {
+        hideFilterSpinner();
+        
+        // 2. CRUCIALE: Assicura che i filtri rimangano disabilitati dopo il caricamento della config
+        // Verranno abilitati SOLO se c'è un periodo selezionato E i dati sono stati caricati
+        if (!window.selectedPeriod || !window.selectedPeriod.startDate) {
+            setFiltersEnabled(false); 
+            showPeriodSelectionMessage();
             return;
         }
     }
 
-    // Popola il filtro Stato con valori hardcodati (sempre disponibile)
-    buildStatusFilter();
-
-    // Setup event listeners
-    setupFilterListeners();
-
-    // Disabilita i filtri all'avvio (verranno abilitati solo quando viene selezionato un periodo)
-    setFiltersEnabled(false);
-
-    // CARICAMENTO CONFIGURAZIONE: Carica prima la configurazione per popolare i filtri
-    // Se configData è fornito, costruisci i filtri dalla configurazione
-    let configData = null;
+    // Se arriviamo qui, c'era già un periodo selezionato (es. ricaricamento stato)
     try {
-        showFilterSpinner();
-        console.log('[FILTERS] Caricamento configurazione da /leave_admin_screen_config');
-        configData = await fetchLeaveAdminScreenConfig();
-        
-        if (configData && typeof configData === 'object') {
-            console.log('[FILTERS] Costruzione filtri da config:', configData);
-            const configSuccess = buildFiltersFromConfig(configData);
-            if (!configSuccess) {
-                console.warn('[FILTERS] buildFiltersFromConfig non ha popolato alcun filtro, uso fallback');
-                // Fallback: carica opzioni dai dati delle richieste
-                const masterParams = { status: [1, 2] };
-                const masterData = await fetchLeavesRequestsWithFilters(masterParams);
-                filterOptionsData = [...masterData];
-                updateFilterOptions(filterOptionsData);
-                // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
-                buildStatusFilter();
-            }
-        } else {
-            console.warn('[FILTERS] configData non valido, uso fallback');
-            // Fallback: carica opzioni dai dati delle richieste
-            const masterParams = { status: [1, 2] };
-            const masterData = await fetchLeavesRequestsWithFilters(masterParams);
-            filterOptionsData = [...masterData];
-            updateFilterOptions(filterOptionsData);
-            // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
-            buildStatusFilter();
-        }
+        handleFilterChange(); // Questo abiliterà i filtri solo a successo avvenuto
     } catch (error) {
-        console.warn('[FILTERS] Errore nel caricamento della configurazione, uso fallback:', error);
-        // Fallback: carica opzioni dai dati delle richieste
-        try {
-            const masterParams = { status: [1, 2] }; // Solo status archivio, nessun altro filtro
-            const masterData = await fetchLeavesRequestsWithFilters(masterParams);
-            
-            // Salva i dati completi per le opzioni dei filtri (immutabili)
-            filterOptionsData = [...masterData];
-            
-            // Popola dinamicamente tutti i filtri con tutte le opzioni possibili
-            updateFilterOptions(filterOptionsData);
-            // Ripristina il filtro Stato con valori hardcodati dopo updateFilterOptions
-            buildStatusFilter();
-        } catch (fallbackError) {
-            console.error('[FILTERS] Errore anche nel fallback:', fallbackError);
-            // Continua comunque, anche se le opzioni non sono state caricate
-        }
-    } finally {
-        hideFilterSpinner();
-    }
-
-    // Se non c'è un periodo selezionato, mostra messaggio informativo e termina
-    if (!window.selectedPeriod || !window.selectedPeriod.startDate || !window.selectedPeriod.endDate) {
-        showPeriodSelectionMessage();
-        return;
-    }
-
-    // CHIAMATA DATI: Carica i dati iniziali con eventuali filtri periodo applicati
-    // Questa chiamata serve per popolare la lista dei risultati
-    try {
-        showFilterSpinner();
-        showListSpinner();
-        
-        // Costruisce parametri con eventuali filtri periodo dal calendario
-        const initialParams = buildApiParams();
-        const initialData = await fetchLeavesRequestsWithFilters(initialParams);
-        
-        allRequestsData = [...initialData];
-        window.allRequestsData = allRequestsData;
-        filteredRequestsData = [...initialData];
-        window.filteredRequestsData = filteredRequestsData;
-        
-        // Renderizza la lista (le opzioni dei filtri sono già state popolate dalla chiamata master)
-        renderList(filteredRequestsData);
-        
-        // Abilita i filtri dopo il caricamento dei dati (solo se c'è un periodo selezionato)
-        if (window.selectedPeriod && window.selectedPeriod.startDate && window.selectedPeriod.endDate) {
-            setFiltersEnabled(true);
-        }
-        
-    } catch (error) {
-        console.error('Errore nel caricamento iniziale:', error);
+        console.error('Errore init:', error);
         showEmptyStateMessage();
-    } finally {
-        hideFilterSpinner();
-        hideListSpinner();
     }
 }
 
@@ -607,7 +551,7 @@ function buildStatusFilter() {
         statoSelect.value = '';
     }
 
-    statoSelect.disabled = false;
+    // RIMOSSO: statoSelect.disabled = false; -> Lasciamo che sia setFiltersEnabled a gestire lo stato
     console.log('[FILTERS] Filtro Stato popolato con valori hardcodati');
     return true;
 }
@@ -622,26 +566,22 @@ function buildStatusFilter() {
  */
 function buildFiltersFromConfig(configData) {
     if (!configData || typeof configData !== 'object') {
-        console.warn('[FILTERS] buildFiltersFromConfig: configData non valido, salto la costruzione dei filtri da config');
+        console.warn('[FILTERS] buildFiltersFromConfig: configData non valido');
         return false;
     }
 
     let success = false;
 
-    // Popola filtro Tipo da configData.types
+    // Popola filtro Tipo
     const tipoSelect = document.getElementById('filterType');
     if (tipoSelect && Array.isArray(configData.types) && configData.types.length > 0) {
-        // Salva il valore corrente selezionato
         const currentValue = tipoSelect.value;
-
-        // Svuota le opzioni mantenendo solo "Tutti"
         tipoSelect.innerHTML = '';
         const newDefaultOption = document.createElement('option');
         newDefaultOption.value = '';
         newDefaultOption.textContent = 'Tutti';
         tipoSelect.appendChild(newDefaultOption);
 
-        // Aggiungi opzioni da configData.types
         configData.types.forEach(function(type) {
             if (type && type.type_id !== undefined && type.type_name) {
                 const option = document.createElement('option');
@@ -652,142 +592,81 @@ function buildFiltersFromConfig(configData) {
             }
         });
 
-        // Ripristina la selezione precedente se ancora valida
-        if (currentValue) {
-            const optionExists = Array.from(tipoSelect.options).some(
-                opt => opt.value === currentValue
-            );
-            if (optionExists) {
-                tipoSelect.value = currentValue;
-            } else {
-                tipoSelect.value = '';
-            }
+        if (currentValue && Array.from(tipoSelect.options).some(opt => opt.value === currentValue)) {
+            tipoSelect.value = currentValue;
         } else {
             tipoSelect.value = '';
         }
-
-        tipoSelect.disabled = false;
-        console.log('[FILTERS] Filtro Tipo popolato da config:', configData.types.length, 'opzioni');
+        // RIMOSSO: tipoSelect.disabled = false;
         success = true;
-    } else if (tipoSelect) {
-        // Se types non è presente o è vuoto, mantieni il filtro come è (non disabilitare)
-        console.warn('[FILTERS] configData.types vuoto o non presente, mantengo filtro Tipo esistente');
     }
 
-    // Popola filtro Reparto da configData.blocks
+    // Popola filtro Reparto
     const repartoSelect = document.getElementById('filterReparto');
     if (repartoSelect && Array.isArray(configData.blocks) && configData.blocks.length > 0) {
-        // Salva il valore corrente selezionato
         const currentValue = repartoSelect.value;
-
-        // Svuota le opzioni mantenendo solo "Tutti"
         repartoSelect.innerHTML = '';
         const newDefaultOption = document.createElement('option');
         newDefaultOption.value = '';
         newDefaultOption.textContent = 'Tutti';
         repartoSelect.appendChild(newDefaultOption);
 
-        // Aggiungi opzioni da configData.blocks
         configData.blocks.forEach(function(block) {
             if (block && block.code !== undefined && block.pretty_name) {
                 const option = document.createElement('option');
                 option.value = block.pretty_name;
                 option.textContent = block.pretty_name;
-                // Usa code come department_id (potrebbe essere necessario mappare in futuro)
                 option.setAttribute('data-department-id', block.code.toString());
-                // Salva anche il colore per uso futuro
-                if (block.color) {
-                    option.setAttribute('data-color', block.color);
-                }
+                if (block.color) option.setAttribute('data-color', block.color);
                 repartoSelect.appendChild(option);
             }
         });
 
-        // Ripristina la selezione precedente se ancora valida
-        if (currentValue) {
-            const optionExists = Array.from(repartoSelect.options).some(
-                opt => opt.value === currentValue
-            );
-            if (optionExists) {
-                repartoSelect.value = currentValue;
-            } else {
-                repartoSelect.value = '';
-            }
+        if (currentValue && Array.from(repartoSelect.options).some(opt => opt.value === currentValue)) {
+            repartoSelect.value = currentValue;
         } else {
             repartoSelect.value = '';
         }
-
-        repartoSelect.disabled = false;
-        console.log('[FILTERS] Filtro Reparto popolato da config:', configData.blocks.length, 'opzioni');
+        // RIMOSSO: repartoSelect.disabled = false;
         success = true;
-    } else if (repartoSelect) {
-        // Se blocks è vuoto o non presente, mantieni il filtro come è (non disabilitare per retrocompatibilità)
-        console.warn('[FILTERS] configData.blocks vuoto o non presente, mantengo filtro Reparto esistente');
     }
 
-    // Popola filtro Mansione da configData.tasks
+    // Popola filtro Mansione
     const mansioneSelect = document.getElementById('filterMansione');
     if (mansioneSelect && Array.isArray(configData.tasks) && configData.tasks.length > 0) {
-        // Salva il valore corrente selezionato
         const currentValue = mansioneSelect.value;
-
-        // Svuota le opzioni mantenendo solo "Tutti"
         mansioneSelect.innerHTML = '';
         const newDefaultOption = document.createElement('option');
         newDefaultOption.value = '';
         newDefaultOption.textContent = 'Tutti';
         mansioneSelect.appendChild(newDefaultOption);
 
-        // Aggiungi opzioni da configData.tasks
-        // Struttura tasks da verificare: assumiamo simile a blocks con task_id, task_name, color
         configData.tasks.forEach(function(task) {
             if (task) {
-                // Supporta diverse strutture possibili
-                const taskId = task.task_id !== undefined ? task.task_id : 
-                              (task.id !== undefined ? task.id : null);
+                const taskId = task.task_id !== undefined ? task.task_id : (task.id !== undefined ? task.id : null);
                 const taskName = task.task_name || task.name || task.pretty_name || null;
                 
                 if (taskName) {
                     const option = document.createElement('option');
                     option.value = taskName;
                     option.textContent = taskName;
-                    if (taskId !== null && taskId !== undefined) {
-                        option.setAttribute('data-task-id', taskId.toString());
-                    }
-                    // Salva anche il colore per uso futuro
-                    if (task.color) {
-                        option.setAttribute('data-color', task.color);
-                    }
+                    if (taskId !== null) option.setAttribute('data-task-id', taskId.toString());
+                    if (task.color) option.setAttribute('data-color', task.color);
                     mansioneSelect.appendChild(option);
                 }
             }
         });
 
-        // Ripristina la selezione precedente se ancora valida
-        if (currentValue) {
-            const optionExists = Array.from(mansioneSelect.options).some(
-                opt => opt.value === currentValue
-            );
-            if (optionExists) {
-                mansioneSelect.value = currentValue;
-            } else {
-                mansioneSelect.value = '';
-            }
+        if (currentValue && Array.from(mansioneSelect.options).some(opt => opt.value === currentValue)) {
+            mansioneSelect.value = currentValue;
         } else {
             mansioneSelect.value = '';
         }
-
-        mansioneSelect.disabled = false;
-        console.log('[FILTERS] Filtro Mansione popolato da config:', configData.tasks.length, 'opzioni');
+        // RIMOSSO: mansioneSelect.disabled = false;
         success = true;
-    } else if (mansioneSelect) {
-        // Se tasks è vuoto o non presente, mantieni il filtro come è (non disabilitare per retrocompatibilità)
-        console.warn('[FILTERS] configData.tasks vuoto o non presente, mantengo filtro Mansione esistente');
     }
 
-    // Popola sempre il filtro Stato con valori hardcodati
     buildStatusFilter();
-
     return success;
 }
 
@@ -1240,9 +1119,8 @@ window.setFiltersEnabled = setFiltersEnabled;
  * Gestisce il cambiamento di qualsiasi filtro
  */
 async function handleFilterChange() {
-    // Se non c'è un periodo selezionato, mostra il messaggio e non renderizzare la lista
+    // Se non c'è un periodo selezionato, disabilita e mostra messaggio
     if (!window.selectedPeriod || !window.selectedPeriod.startDate || !window.selectedPeriod.endDate) {
-        // Assicurati che i filtri siano disabilitati quando non c'è periodo
         setFiltersEnabled(false);
         showPeriodSelectionMessage();
         updateActiveFiltersChips();
@@ -1250,57 +1128,43 @@ async function handleFilterChange() {
         return;
     }
     
-    // Mostra spinner durante il caricamento
+    // Disabilita filtri durante il caricamento (opzionale, ma consigliato per UX)
+    // setFiltersEnabled(false); 
+    
     showFilterSpinner();
     showListSpinner();
     
     try {
-        // Costruisce parametri API dai filtri UI
         const params = buildApiParams();
-        
-        // Esegue chiamata API
         const apiData = await fetchLeavesRequestsWithFilters(params);
         
-        // Aggiorna dati globali con la risposta API
         allRequestsData = [...apiData];
         window.allRequestsData = allRequestsData;
         filteredRequestsData = [...apiData];
         window.filteredRequestsData = filteredRequestsData;
         
-        // NOTA: NON aggiornare le opzioni dei dropdown - devono rimanere statiche
-        // Le opzioni sono già state popolate all'inizializzazione con filterOptionsData
-        
-        // Renderizza la lista (i dati arrivano già ordinati dal BE)
         renderList(filteredRequestsData);
         
-        // Aggiorna chips filtri attivi
         updateActiveFiltersChips();
         updateResetButtonState();
         
-        // Abilita i filtri dopo il caricamento dei dati (solo se c'è un periodo selezionato)
-        if (window.selectedPeriod && window.selectedPeriod.startDate && window.selectedPeriod.endDate) {
-            setFiltersEnabled(true);
-        }
+        // 3. ABILITAZIONE FILTRI: Solo qui, dopo aver ricevuto e mostrato i dati con successo
+        setFiltersEnabled(true);
         
     } catch (error) {
         console.error('Errore nel caricamento dati:', error);
+        setFiltersEnabled(false); // Mantieni disabilitato in caso di errore
         
-        // Disabilita i filtri in caso di errore
-        setFiltersEnabled(false);
-        
-        // Mostra messaggio di errore
         const approvalList = document.getElementById('approvalList');
         if (approvalList) {
             approvalList.innerHTML = '';
             const errorMessage = document.createElement('div');
             errorMessage.className = 'text-center py-4 text-danger';
-            errorMessage.style.fontSize = '0.917rem';
             errorMessage.style.padding = '52.8px';
-            errorMessage.textContent = `Errore nel caricamento dei dati: ${error.message || 'Errore sconosciuto'}`;
+            errorMessage.textContent = `Errore nel caricamento: ${error.message}`;
             approvalList.appendChild(errorMessage);
         }
     } finally {
-        // Nascondi spinner
         hideFilterSpinner();
         hideListSpinner();
     }

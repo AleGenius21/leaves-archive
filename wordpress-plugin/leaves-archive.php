@@ -219,8 +219,8 @@ function leaves_archive_shortcode($atts) {
     ob_start();
     ?>
     <div class="leaves-archive-wrapper">
-        <div class="container-fluid py-3">
-            <!-- Filter Bar Component Container -->
+        <div class="container-fluid py-3 pe-0">
+            <!-- Filter Bar Component Container - occupa tutta la larghezza -->
             <div id="filterBarContainer">
                 <!-- Il componente filter bar verrà caricato dinamicamente qui -->
             </div>

@@ -36,7 +36,9 @@
 	display: flex;
 	align-items: center;
 	gap: 8.8px;
-	min-width: 220px;
+	min-width: 180px;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	flex-shrink: 0;
 }
 
@@ -281,22 +283,3 @@
 		text-overflow: ellipsis;
 	}
 }
-
-/* Responsive adjustments generali */
-@media (max-width: 768px) {
-	.approval-row {
-		flex-wrap: wrap;
-		padding: 6.6px 8.8px;
-	}
-
-	.employee-profile {
-		min-width: 100%;
-		margin-bottom: 4.4px;
-	}
-
-	.request-details {
-		min-width: 100%;
-		margin-bottom: 4.4px;
-	}
-}
-

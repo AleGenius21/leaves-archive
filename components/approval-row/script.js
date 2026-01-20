@@ -426,7 +426,7 @@ function createApprovalRow(data) {
 
     // --- 2.3 Data e Ora (Wrapper min-width: 165px) ---
     const datetimeWrapper = document.createElement('div');
-    datetimeWrapper.className = 'rd-wrapper-datetime'; // CSS include position: relative
+    datetimeWrapper.className = 'rd-wrapper-datetime ms-4'; // CSS include position: relative
 
     // *** MODIFICA: Nuova logica per formattazione date (Ferie singola riga, Permessi invariati) ***
     const dateInfo = extractDateInfoFromMoorea(data);
@@ -452,10 +452,10 @@ function createApprovalRow(data) {
         }
 
         if (start) {
-            const text = (start === end) ? `Il ${start}` : `Da ${start} a ${end}`;
+            const text = (start === end) ? `${start}` : `Da  ${start}  a  ${end}`;
             
             const simpleSpan = document.createElement('span');
-            simpleSpan.className = 'date-range-normal'; // CSS per testo normale
+            simpleSpan.className = 'date-range-normal fw-bold'; 
             simpleSpan.textContent = text;
             textContainer.appendChild(simpleSpan);
         }

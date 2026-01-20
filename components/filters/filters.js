@@ -6,7 +6,7 @@
 const API_BASE_URL = 'https://my-genius.it/wp-json/genius/v1';
 const API_ENDPOINT = '/get_leaves';
 const API_TIMEOUT = 30000; // 30 secondi
-const API_BEARER_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NjgzMjQ1NjEsImV4cCI6MTc2ODkyOTM2MSwidWlkIjoyNTUyLCJ1c2VybmFtZSI6IlNNTk1SSzk3TDAzQTk0NFIifQ.BpxtmyEahDcZexIeb9NyeE5k4Gp_TSYaRFTyflKS0NE';
+const API_BEARER_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3Njg5MDc0MjMsImV4cCI6MTc3MDYzNTQyMywidWlkIjoyNjg1LCJ1c2VybmFtZSI6IkdOR01aTzA0RTEzWjM1NEUifQ.3AV7DDRUf1AgRJyPh_cvDd3u9_Gf7-YOSEX-KfUIAEg';
 
 // Riferimenti globali
 let allRequestsData = [];
@@ -1343,7 +1343,7 @@ function renderList(data) {
     list.innerHTML = '';
 
     if (data.length === 0) {
-        list.innerHTML = '<div class="text-center py-4 text-muted" style="font-size: 0.917rem;">Nessuna richiesta trovata.</div>';
+        list.innerHTML = '<div class="empty-state-container"><img src="assets/image/desert.png" alt="Nessuna richiesta trovata" class="empty-state-image"></div>';
         return;
     }
 
@@ -1364,14 +1364,14 @@ function renderList(data) {
 
     const groups = {};
     filtered.forEach(req => {
-        const rep = req.department_name || req.reparto || 'Altro';
+        const rep = req.department_name || req.reparto || 'Nessun reparto';
         if (!groups[rep]) groups[rep] = [];
         groups[rep].push(req);
     });
 
     Object.keys(groups).sort().forEach(rep => {
         const label = document.createElement('div');
-        label.className = 'reparto-section-label';
+        label.className = 'reparto-section-label pt-4';
         label.textContent = rep.toUpperCase();
         list.appendChild(label);
 

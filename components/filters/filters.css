@@ -1,9 +1,11 @@
 /* Filter Bar Container */
 .filter-bar-container {
     background-color: #ffffff;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 8.8px 0;
-    margin-bottom: 13.2px;
+    border-bottom: 0px solid #e0e0e0;
+    padding: 8.8px 12px;
+    margin-bottom: 0;
+	z-index: 100;
+	box-shadow: rgba(133, 133, 133, 0.2) 0px 5px 8px -2px;
 }
 
 /* Filter Bar */

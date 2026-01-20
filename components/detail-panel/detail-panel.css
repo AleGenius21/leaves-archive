@@ -16,18 +16,17 @@
 }
 
 .detail-panel.panel-open {
-    width: 36%;
-    /* Larghezza minima assoluta: il calendario non si restringe mai sotto questa soglia */
-    min-width: 380px;
+    width: 30%;
+    min-width: 430PX;
     overflow: hidden;
 }
 
 /* Close Button */
 .btn-close-panel {
-    display: none; /* Nascosto di default, visibile solo su mobile a schermo intero */
+    display: none; 
     align-items: center;
     justify-content: center;
-    width: 24px; /* Ridotto leggermente */
+    width: 24px; 
     height: 24px;
     padding: 0;
     border: 1px solid #d0d0d0;
@@ -66,7 +65,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 8px; /* Padding ridotto */
+    padding: 12px 10px 12px 13px;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -171,7 +170,7 @@
 
 /* Month Header */
 .month-header {
-    font-size: 0.8rem; /* Font ridotto */
+    font-size: 0.9rem; /* Font ridotto */
     font-weight: 700;
     color: #000000;
     padding: 2px 0;
@@ -191,7 +190,7 @@
 
 /* Calendar Weekday Header */
 .calendar-weekday {
-    font-size: 0.65rem; /* Font ridotto */
+    font-size: 0.81rem; /* Font ridotto */
     font-weight: 600;
     color: #666666;
     text-align: center;
@@ -253,30 +252,17 @@
 
 /* Day number container */
 .calendar-day-number {
-    font-size: 0.7rem; /* Font ridotto */
+    font-size: 0.85rem; /* Font ridotto */
     font-weight: 600;
     align-self: flex-start;
-    line-height: 1;
-    margin-bottom: 2px;
 }
 
-/* Sunday circle - cerchio rosso per domeniche */
+/* Sunday - numero rosso per domeniche */
 .calendar-day-number.sunday {
-    width: 16px;       /* Ridotto drasticamente da 1.2rem */
-    height: 16px;      /* Ridotto */
-    min-width: 16px;
-    min-height: 16px;
-    border: 1px solid #f87171;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    text-align: center;
-    line-height: 1;
-    font-size: 0.65rem; /* Numero dentro il cerchio più piccolo */
+    color: #db0000; /* red-500 */
+    font-size: 0.85rem;
+    font-weight: 600;
+    align-self: flex-start;
 }
 
 /* Badge container */

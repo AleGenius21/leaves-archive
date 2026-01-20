@@ -219,7 +219,7 @@ function leaves_archive_shortcode($atts) {
     ob_start();
     ?>
     <div class="leaves-archive-wrapper">
-        <div class="container-fluid py-3 pe-0">
+        <div class="container-fluid py-3 px-0">
             <!-- Filter Bar Component Container - occupa tutta la larghezza -->
             <div id="filterBarContainer">
                 <!-- Il componente filter bar verrà caricato dinamicamente qui -->
@@ -228,7 +228,7 @@ function leaves_archive_shortcode($atts) {
             <div class="main-container">
                 <!-- Sezione lista (sinistra) -->
                 <div class="list-section" id="listSection">
-                    <div class="approval-list" id="approvalList">
+                    <div class="approval-list px-3" id="approvalList">
                         <!-- Le righe verranno generate dinamicamente via JavaScript -->
                     </div>
                 </div>

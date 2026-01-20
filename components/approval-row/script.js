@@ -1,4 +1,51 @@
 /**
+ * Formatta una data YYYY-MM-DD in formato "dd/MM/yy" (es. "22/01/25")
+ * @param {string} dateString 
+ * @returns {string}
+ */
+function formatDateDDMMYY(dateString) {
+	if (!dateString) return '';
+	const date = new Date(dateString + 'T00:00:00');
+	if (isNaN(date.getTime())) return dateString;
+
+	const day = String(date.getDate()).padStart(2, '0');
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const year = String(date.getFullYear()).slice(-2); // Ultime 2 cifre
+
+	return `${day}/${month}/${year}`;
+}
+
+/**
+ * Formatta una data YYYY-MM-DD in formato "Gio dd/MM/yy" (es. "Gio 28/01/26")
+ * @param {string} dateString 
+ * @returns {string}
+ */
+function formatDayDDMMYY(dateString) {
+	if (!dateString) return '';
+	const date = new Date(dateString + 'T00:00:00');
+	if (isNaN(date.getTime())) return dateString;
+
+	const giorniSettimana = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+	const giornoSettimana = giorniSettimana[date.getDay()];
+	const day = String(date.getDate()).padStart(2, '0');
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const year = String(date.getFullYear()).slice(-2);
+
+	return `${giornoSettimana} ${day}/${month}/${year}`;
+}
+
+/**
+ * Formatta un orario da HH:mm:ss a HH:mm (rimuove i secondi)
+ * @param {string} timeString - Orario in formato HH:mm:ss o HH:mm
+ * @returns {string} Orario formattato come HH:mm
+ */
+function formatTimeToHHMM(timeString) {
+	if (!timeString || typeof timeString !== 'string') return timeString || '';
+	// Se la stringa è lunga almeno 5 caratteri (es. 09:00 o 09:00:00), prendi i primi 5
+	return timeString.length >= 5 ? timeString.substring(0, 5) : timeString;
+}
+
+/**
  * Formatta una data YYYY-MM-DD in formato italiano (es. "Gio 18 Dic")
  * @param {string} dateString - Data in formato YYYY-MM-DD
  * @returns {string} Data formattata in italiano
@@ -22,33 +69,27 @@ function formatDateItalian(dateString) {
  * @returns {string} Stringa formattata con quantità (es. "3g" o "5h")
  */
 function extractQuantityFromMoorea(data) {
-    // Priorità all'oggetto moorea nuovo
-    if (data.moorea_obj && data.moorea_obj.meta) {
-        const meta = data.moorea_obj.meta;
-        const isPermesso = data.type === 2 || data.type_name === 'PERMESSO';
+	if (data.moorea_obj && data.moorea_obj.meta) {
+		const meta = data.moorea_obj.meta;
+		// Determina se è PERMESSO o FERIE - nuova struttura: type, fallback a type_id
+		const typeValue = data.type !== undefined ? data.type : (data.type_id !== undefined ? data.type_id : null);
+		const isPermesso = typeValue === 2 || data.type_name === 'Permessi' || data.type_name === 'PERMESSO';
 
-        if (isPermesso) {
-            // Se c'è hours (decimal), formattalo
-            if (typeof meta.hours === 'number') {
-                // Arrotonda a 2 decimali o intero
-                return parseFloat(meta.hours.toFixed(2)) + 'h';
-            }
-            // Fallback su quantitaOre (spesso in minuti nel nuovo JSON)
-            if (data.quantitaOre) {
-                // Se > 8 probabilmente sono minuti
-                if (data.quantitaOre > 24) {
-                     return Math.round(data.quantitaOre / 60) + 'h';
-                }
-                return data.quantitaOre + 'h';
-            }
-        } else {
-            // FERIE
-            if (typeof meta.days === 'number') {
-                return meta.days + 'g';
-            }
-        }
-    }
-    return '';
+		if (isPermesso && typeof meta.hours === 'number') {
+			// PERMESSO: usa meta.hours e formatta come "5h"
+			return meta.hours + 'h';
+		} else if (!isPermesso && typeof meta.days === 'number') {
+			// FERIE: usa meta.days e formatta come "3g"
+			return meta.days + 'g';
+		}
+	}
+	// Fallback ai campi legacy
+	// Se abbiamo ore legacy, assumiamo che sia PERMESSO
+	if (typeof data.ore === 'number' && data.ore > 0) {
+		return data.ore + 'h';
+	}
+	// Default: restituisci stringa vuota se non ci sono dati
+	return '';
 }
 
 /**
@@ -59,37 +100,117 @@ function extractQuantityFromMoorea(data) {
  * @returns {Object} Oggetto con { dateText: string, timeText: string|null }
  */
 function extractDateInfoFromMoorea(data) {
-    const isPermesso = data.type === 2 || data.type_name === 'PERMESSO';
-    
-    let dateText = '';
-    let timeText = null;
+	// Determina se è PERMESSO o FERIE - nuova struttura: type, fallback a type_id
+	const typeValue = data.type !== undefined ? data.type : (data.type_id !== undefined ? data.type_id : null);
+	const isPermesso = typeValue === 2 || data.type_name === 'Permessi' || data.type_name === 'PERMESSO';
 
-    // Uso dataInizio root level (YYYY-MM-DD)
-    if (data.dataInizio) {
-        if (isPermesso) {
-            dateText = formatDateItalian(data.dataInizio);
-            
-            // Se non è giornata intera, cerchiamo gli orari
-            if (data.giornataIntera === 0 || data.giornataIntera === false) {
-                // Il nuovo JSON ha oraInizio: "11:00:00"
-                if (data.oraInizio && data.oraFine) {
-                    // Prendi solo i primi 5 caratteri (HH:MM)
-                    const start = String(data.oraInizio).substring(0, 5);
-                    const end = String(data.oraFine).substring(0, 5);
-                    timeText = `${start} - ${end}`;
-                }
-            }
-        } else {
-            // FERIE
-            if (data.dataFine && data.dataFine !== data.dataInizio) {
-                dateText = 'Da ' + formatDateItalian(data.dataInizio) + ' a ' + formatDateItalian(data.dataFine);
-            } else {
-                dateText = formatDateItalian(data.dataInizio);
-            }
-        }
-    }
-    
-    return { dateText, timeText };
+	// Prova a usare dataInizio/dataFine (struttura Admin Desktop - root level)
+	if (data.dataInizio) {
+		let dateText = '';
+		let timeText = null;
+
+		if (isPermesso) {
+			// PERMESSO: usa solo dataInizio (i permessi sono sempre su un solo giorno)
+			dateText = formatDateItalian(data.dataInizio);
+
+			// Verifica se è giornata intera
+			const giornataIntera = data.giornataIntera === 1 || data.giornataIntera === true;
+
+			if (!giornataIntera) {
+				// Non giornata intera: estrai orari
+				// Prova root level prima
+				if (data.oraInizio && data.oraFine) {
+					if (typeof data.oraInizio === 'string' && typeof data.oraFine === 'string') {
+						// MODIFICA: Uso formatTimeToHHMM per rimuovere i secondi
+						timeText = `${formatTimeToHHMM(data.oraInizio)} - ${formatTimeToHHMM(data.oraFine)}`;
+					} else if (typeof data.oraInizio === 'number' && typeof data.oraFine === 'number') {
+						// Converti da minuti a HH:MM
+						const hoursInizio = Math.floor(data.oraInizio / 60);
+						const minsInizio = data.oraInizio % 60;
+						const hoursFine = Math.floor(data.oraFine / 60);
+						const minsFine = data.oraFine % 60;
+						const orarioInizio = String(hoursInizio).padStart(2, '0') + ':' + String(minsInizio).padStart(2, '0');
+						const orarioFine = String(hoursFine).padStart(2, '0') + ':' + String(minsFine).padStart(2, '0');
+						timeText = `${orarioInizio} - ${orarioFine}`;
+					}
+				}
+			}
+			// Se giornataIntera === true, timeText rimane null
+		} else {
+			// FERIE: gestisci range date
+			if (data.dataFine && data.dataFine !== data.dataInizio) {
+				// Date diverse: formatta come "Da Mer 18 Dic a Mar 24 Dic"
+				dateText = 'Da ' + formatDateItalian(data.dataInizio) + ' a ' + formatDateItalian(data.dataFine);
+			} else {
+				// Date uguali: mostra solo dataInizio
+				dateText = formatDateItalian(data.dataInizio);
+			}
+		}
+
+		return { dateText, timeText };
+	}
+
+	// Fallback: prova a estrarre da moorea_obj.leaves
+	if (data.moorea_obj && data.moorea_obj.leaves && Array.isArray(data.moorea_obj.leaves) && data.moorea_obj.leaves.length > 0) {
+		const leaves = data.moorea_obj.leaves;
+
+		// Ordina i leaves per dataInizio
+		const sortedLeaves = [...leaves].sort((a, b) => {
+			const dateA = new Date(a.dataInizio || a.dataFine || '');
+			const dateB = new Date(b.dataInizio || b.dataFine || '');
+			return dateA - dateB;
+		});
+
+		// Prendi la prima e ultima data
+		const firstLeave = sortedLeaves[0];
+		const lastLeave = sortedLeaves[sortedLeaves.length - 1];
+
+		const firstDate = firstLeave.dataInizio || firstLeave.dataFine || '';
+		const lastDate = lastLeave.dataFine || lastLeave.dataInizio || '';
+
+		let dateText = '';
+		let timeText = null;
+
+		if (isPermesso) {
+			// PERMESSO: usa solo la prima data
+			dateText = formatDateItalian(firstDate);
+
+			// Verifica giornataIntera (può essere nel leave o a livello root)
+			const giornataIntera = (firstLeave.interaGiornata === 1) || (data.giornataIntera === 1 || data.giornataIntera === true);
+
+			if (!giornataIntera) {
+				// Cerca orari nei leaves
+				const orarioInizio = firstLeave.orarioInizio || firstLeave.timeInizio || firstLeave.orario_inizio;
+				const orarioFine = firstLeave.orarioFine || firstLeave.timeFine || firstLeave.orario_fine;
+
+				if (orarioInizio && orarioFine) {
+					// MODIFICA: Uso formatTimeToHHMM per rimuovere i secondi
+					timeText = `${formatTimeToHHMM(orarioInizio)} - ${formatTimeToHHMM(orarioFine)}`;
+				}
+			}
+		} else {
+			// FERIE: gestisci range date
+			if (firstDate === lastDate || sortedLeaves.length === 1) {
+				dateText = formatDateItalian(firstDate);
+			} else {
+				// Date diverse: formatta come "Da X a Y"
+				dateText = 'Da ' + formatDateItalian(firstDate) + ' a ' + formatDateItalian(lastDate);
+			}
+		}
+
+		return { dateText, timeText };
+	}
+
+	// Fallback ai campi legacy
+	let dateText = data.data || '';
+	let timeText = null;
+
+	if (isPermesso && data.orario_inizio && data.orario_fine) {
+		// MODIFICA: Uso formatTimeToHHMM per rimuovere i secondi
+		timeText = `${formatTimeToHHMM(data.orario_inizio)} - ${formatTimeToHHMM(data.orario_fine)}`;
+	}
+
+	return { dateText, timeText };
 }
 
 /**
@@ -221,7 +342,7 @@ function createApprovalRow(data) {
     const badgeMansione = document.createElement('span');
     badgeMansione.className = 'badge-mansione';
     badgeMansione.textContent = data.task_name || data.mansione || '';
-    if (data.task_color) applyBadgeStyle(badgeMansione, data.task_color);
+    if (data.task_color) applyTaskBadgeStyle(badgeMansione, data.task_color);
 
     // Reparto
     const badgeReparto = document.createElement('span');
@@ -237,40 +358,137 @@ function createApprovalRow(data) {
     employeeProfile.appendChild(avatar);
     employeeProfile.appendChild(employeeInfo);
 
-    // --- Dettagli Richiesta ---
+    // ---------------------------------------------------------
+    // SEZIONE 2: Dettagli Richiesta (Centro) con WRAPPER
+    // ---------------------------------------------------------
     const requestDetails = document.createElement('div');
     requestDetails.className = 'request-details';
 
+    // Determina tipo
+    const typeValue = data.type !== undefined ? data.type : (data.type_id !== undefined ? data.type_id : null);
+    const tipoRichiesta = data.type_name || data.tipo_richiesta || '';
+    const isPermesso = typeValue === 2 || tipoRichiesta === 'Permessi' || tipoRichiesta === 'PERMESSO';
+
+    // --- 2.1 Tipo Richiesta (Wrapper min-width: 90px) ---
+    const typeWrapper = document.createElement('div');
+    typeWrapper.className = 'rd-wrapper-type'; // CSS include position: relative
+
     const typeBadge = document.createElement('span');
     typeBadge.className = 'request-type-badge';
-    // NUOVO CAMPO: type_name
-    const tipoRichiesta = data.type_name || data.tipo_richiesta || '';
-    
-    if (tipoRichiesta.toUpperCase() === 'FERIE' || data.type === 1) {
+
+    if (tipoRichiesta === 'Ferie' || tipoRichiesta === 'FERIE' || typeValue === 1) {
         typeBadge.classList.add('badge-ferie');
-    } else {
+    } else if (tipoRichiesta === 'Permessi' || tipoRichiesta === 'PERMESSO' || typeValue === 2) {
         typeBadge.classList.add('badge-permessi');
     }
-    typeBadge.textContent = tipoRichiesta;
+    typeBadge.textContent = tipoRichiesta || '';
+
+    typeWrapper.appendChild(typeBadge);
+
+    // --- 2.2 Quantità (Wrapper min-width: 45px) ---
+    const quantityWrapper = document.createElement('div');
+    quantityWrapper.className = 'rd-wrapper-quantity';
 
     const quantitySpan = document.createElement('span');
     quantitySpan.className = 'request-quantity px-2';
-    quantitySpan.textContent = extractQuantityFromMoorea(data);
 
-    const datetimeSpan = document.createElement('span');
-    datetimeSpan.className = 'request-datetime';
-    
-    const dateInfo = extractDateInfoFromMoorea(data);
-    
-    if (dateInfo.timeText) {
-        datetimeSpan.innerHTML = `<span>${dateInfo.dateText}</span><span class="datetime-separator">|</span><span class="datetime-time">${dateInfo.timeText}</span>`;
+    // *** MODIFICA: Logica avanzata per visualizzazione quantità ***
+    const quantityText = extractQuantityFromMoorea(data); // Restituisce es. "3g" o "5h"
+
+    if (quantityText && quantityText.length > 0) {
+        // Estrai l'ultimo carattere per capire l'unità (g o h)
+        const unitChar = quantityText.slice(-1).toLowerCase();
+        // Estrai la parte numerica
+        const numberVal = quantityText.slice(0, -1);
+
+        let label = '';
+        if (unitChar === 'g') {
+            label = (numberVal === '1') ? 'giorno' : 'giorni';
+        } else if (unitChar === 'h') {
+            label = (numberVal === '1') ? 'ora' : 'ore';
+        }
+
+        if (label) {
+            // Se abbiamo riconosciuto il formato, creiamo l'HTML strutturato
+            quantitySpan.innerHTML = `
+                <span class="qty-number">${numberVal}</span>
+                <span class="qty-label">${label}</span>
+            `;
+        } else {
+            // Fallback per formati non standard
+            quantitySpan.textContent = quantityText;
+        }
     } else {
-        datetimeSpan.textContent = dateInfo.dateText;
+        quantitySpan.textContent = '';
     }
 
-    requestDetails.appendChild(typeBadge);
-    requestDetails.appendChild(quantitySpan);
-    requestDetails.appendChild(datetimeSpan);
+    quantityWrapper.appendChild(quantitySpan);
+
+    // --- 2.3 Data e Ora (Wrapper min-width: 165px) ---
+    const datetimeWrapper = document.createElement('div');
+    datetimeWrapper.className = 'rd-wrapper-datetime'; // CSS include position: relative
+
+    // *** MODIFICA: Nuova logica per formattazione date (Ferie singola riga, Permessi invariati) ***
+    const dateInfo = extractDateInfoFromMoorea(data);
+    
+    const textContainer = document.createElement('div');
+    textContainer.style.display = 'flex';
+    textContainer.style.flexDirection = 'column';
+    textContainer.style.alignItems = 'flex-start';
+
+    if (!isPermesso) {
+        // --- FERIE: Solo una riga "Da X a Y", testo normale ---
+        
+        let start = '', end = '';
+        if (data.dataInizio) {
+            start = formatDateDDMMYY(data.dataInizio);
+            end = data.dataFine ? formatDateDDMMYY(data.dataFine) : start;
+        } 
+        else if (data.moorea_obj && data.moorea_obj.leaves && data.moorea_obj.leaves.length > 0) {
+            const leaves = data.moorea_obj.leaves;
+            const sortedLeaves = [...leaves].sort((a, b) => new Date(a.dataInizio) - new Date(b.dataInizio));
+            start = formatDateDDMMYY(sortedLeaves[0].dataInizio);
+            end = formatDateDDMMYY(sortedLeaves[sortedLeaves.length - 1].dataFine || sortedLeaves[sortedLeaves.length - 1].dataInizio);
+        }
+
+        if (start) {
+            const text = (start === end) ? `Il ${start}` : `Da ${start} a ${end}`;
+            
+            const simpleSpan = document.createElement('span');
+            simpleSpan.className = 'date-range-normal'; // CSS per testo normale
+            simpleSpan.textContent = text;
+            textContainer.appendChild(simpleSpan);
+        }
+        
+    } else {
+        // --- PERMESSO: Data estesa + orari (Invariato) ---
+        
+        let formattedDate = '';
+        if (data.dataInizio) {
+            formattedDate = formatDayDDMMYY(data.dataInizio);
+        } else if (data.moorea_obj && data.moorea_obj.leaves && data.moorea_obj.leaves.length > 0) {
+            formattedDate = formatDayDDMMYY(data.moorea_obj.leaves[0].dataInizio);
+        } else {
+            formattedDate = dateInfo.dateText; 
+        }
+
+        const span = document.createElement('span');
+        span.className = 'request-datetime';
+
+        if (dateInfo.timeText) {
+            span.innerHTML = `${formattedDate} <span class="datetime-separator">|</span> <span class="datetime-time">${dateInfo.timeText}</span>`;
+        } else {
+            span.textContent = formattedDate;
+        }
+        textContainer.appendChild(span);
+    }
+
+    datetimeWrapper.appendChild(textContainer);
+
+    // Appendere i wrapper al contenitore principale
+    requestDetails.appendChild(typeWrapper);
+    requestDetails.appendChild(quantityWrapper);
+    requestDetails.appendChild(datetimeWrapper);
 
     // --- Icona Stato ---
     const statusIcon = document.createElement('div');

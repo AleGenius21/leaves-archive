@@ -1,17 +1,30 @@
 /* Stile riga approvazione */
 .approval-row {
 	display: flex;
+	flex-wrap: nowrap;
 	align-items: center;
 	padding: 8.8px 13.2px;
-	border: 1px solid #e0e0e0;
+
+	/* Bordi e Ombra */
+	border: none;
+	box-shadow: rgba(60, 64, 66, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+
 	border-radius: 3.3px;
 	background-color: #ffffff;
-	margin-bottom: 4.4px;
+	margin-bottom: 12px;
 	transition: background-color 0.2s ease;
 	gap: 13.2px;
 	cursor: pointer;
-	margin-right: 10px;
+
+	/* IMPORANTE: Definisce il contesto per i figli assoluti */
 	position: relative;
+
+	/* NUOVO: Abilita le Container Queries per questa riga */
+	container-type: inline-size;
+	container-name: approval-row-card;
+
+	/* Larghezza minima per evitare restringimento eccessivo */
+	min-width: 663px;
 }
 
 .approval-row:hover {
@@ -44,10 +57,17 @@
 
 .employee-name {
 	font-weight: 700;
-	font-size: 0.917rem; /* 12.1px */
+	font-size: 0.917rem;
+	/* 12.1px */
 	color: #000000;
 	margin: 0;
 	line-height: 1.2;
+
+	/* Ellipsis */
+	max-width: 140px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .employee-badges {
@@ -58,12 +78,13 @@
 
 .badge-mansione,
 .badge-reparto {
-	font-size: 0.75rem; /* 9.9px */
-	padding: 2.2px 6.6px;
-	border-radius: 4px;
+	font-size: 0.60rem;
+	padding: 0.1rem 0.3rem 0.05rem 0.3rem;
+	border-radius: 6px;
 	border: none;
-	font-weight: 500;
-	line-height: 1.4;
+	font-weight: 600;
+	max-width: 60px;
+	overflow: hidden;
 }
 
 .badge-mansione {
@@ -105,31 +126,99 @@
 }
 
 .request-quantity {
-	font-size: 0.85rem;
-	color: #666666;
+	display: flex;
+	flex-direction: column;
+	/* Impila verticalmente */
+	align-items: center;
+	/* Centra orizzontalmente */
+	justify-content: center;
+	line-height: 1;
+	/* Riduce lo spazio tra le righe */
+	min-width: 75px;
+	/* Assicura una larghezza minima */
+}
+
+.qty-number {
+	font-size: 1.7rem;
+	/* Dimensione grande */
 	font-weight: 600;
+	/* Molto grassetto */
+	color: #111111;
+	/* Nero intenso */
+	letter-spacing: 1px;
+	padding-bottom: 4px;
+}
+
+.qty-label {
+	font-size: 0.635rem;
+	/* Molto piccolo */
+	font-weight: 600;
+	text-transform: uppercase;
+	/* Tutto maiuscolo */
+	color: #6e6e6e;
+	/* Grigio per meno enfasi */
+	margin-top: 1px;
+	letter-spacing: 0.8px;
+}
+
+/* Stile per la data Ferie (Unica riga, non grassetto) */
+.date-range-normal {
+	font-size: 0.835rem;
+	font-weight: 400;
+	color: #000000;
 	white-space: nowrap;
 }
 
 .request-datetime {
-	font-size: 0.835rem; /* Font-size minimo */
+	font-size: 0.835rem;
+	/* Font-size minimo */
 	color: #000000;
 	white-space: nowrap;
 	display: flex;
 	align-items: center;
 }
 
-.request-datetime > * {
-	font-size: 0.835rem; /* Assicura che tutti i figli abbiano almeno 0.835rem */
+.request-datetime>* {
+	font-size: 0.835rem;
+	/* Assicura che tutti i figli abbiano almeno 0.835rem */
 }
 
 .datetime-separator {
-	margin: 0 8.8px; /* Spazio maggiore tra data e orari */
+	margin: 0 8.8px;
+	/* Spazio maggiore tra data e orari */
 	color: #000000;
 }
 
 .datetime-time {
 	color: #000000;
+}
+
+/* Wrapper per gli elementi della riga richiesta */
+
+/* 1. Wrapper TIPO */
+.rd-wrapper-type {
+	min-width: 90px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	overflow: visible;
+}
+
+.rd-wrapper-quantity {
+	min-width: 45px;
+	display: flex;
+	align-items: center;
+}
+
+/* 2. Wrapper DATA */
+.rd-wrapper-datetime {
+	min-width: 165px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	position: relative;
+	overflow: visible;
 }
 
 /* Icona stato all'estremo destro */
@@ -155,7 +244,45 @@
 	color: #ef4444; /* red-500 */
 }
 
-/* Responsive adjustments */
+/* 
+   LOGICA DI POSIZIONAMENTO RESPONSIVE (Larghezza Row < 620px)
+   Usiamo @container query sulla row stessa.
+*/
+@container approval-row-card (max-width: 586px) {
+
+	/* Limita la larghezza del profilo dipendente quando la riga è stretta */
+	.employee-profile {
+		min-width: 0;
+		max-width: 140px !important;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.employee-info {
+		display: flex;
+		flex-direction: column;
+		gap: 4.4px;
+		text-overflow: ellipsis;
+		overflow: hidden;
+	}
+
+	.employee-name {
+		font-weight: 700;
+		font-size: 0.917rem;
+		/* 12.1px */
+		color: #000000;
+		margin: 0;
+		line-height: 1.2;
+
+		/* Ellipsis */
+		max-width: 98%;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+
+/* Responsive adjustments generali */
 @media (max-width: 768px) {
 	.approval-row {
 		flex-wrap: wrap;

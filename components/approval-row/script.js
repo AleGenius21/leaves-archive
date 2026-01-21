@@ -17,6 +17,7 @@ function formatDateDDMMYY(dateString) {
 
 /**
  * Formatta una data YYYY-MM-DD in formato "Gio dd/MM/yy" (es. "Gio 28/01/26")
+ * Restituisce HTML con span per il giorno della settimana
  * @param {string} dateString 
  * @returns {string}
  */
@@ -31,7 +32,7 @@ function formatDayDDMMYY(dateString) {
 	const month = String(date.getMonth() + 1).padStart(2, '0');
 	const year = String(date.getFullYear()).slice(-2);
 
-	return `${giornoSettimana} ${day}/${month}/${year}`;
+	return `<span class="day-name">${giornoSettimana}</span> ${day}/${month}/${year}`;
 }
 
 /**
@@ -62,9 +63,96 @@ function formatDateItalian(dateString) {
 }
 
 /**
+ * Normalizza una quantità di ore o giorni secondo le regole specificate
+ * Per ORE: arrotonda a intero o step di 0.5 (1 = 1 ora, 2.5 = 2 ore 30 min, 2.77 → 3 = 3 ore)
+ * Per GIORNI: arrotonda sempre ad un intero
+ * @param {number} value - Valore da normalizzare
+ * @param {string} unit - Unità: 'hours' per ore, 'days' per giorni
+ * @returns {number} Valore normalizzato
+ */
+function normalizeQuantity(value, unit) {
+	if (typeof value !== 'number' || isNaN(value)) {
+		return value;
+	}
+	if (unit === 'hours') {
+		const remainder = value % 1;
+		if (remainder === 0 || remainder === 0.5) {
+			return value;
+		}
+		if (remainder < 0.25) {
+			return Math.floor(value);
+		} else if (remainder < 0.75) {
+			return Math.floor(value) + 0.5;
+		} else {
+			return Math.ceil(value);
+		}
+	} else if (unit === 'days') {
+		return Math.round(value);
+	}
+	return value;
+}
+
+/**
+ * Verifica se una richiesta è "Last Minute" in base al tipo e alla data di creazione
+ * @param {Object} data - Oggetto contenente i dati della richiesta
+ * @param {number} typeValue - Tipo di richiesta: 1=Ferie, 2=Permessi
+ * @returns {boolean} True se la richiesta è Last Minute
+ */
+function isLastMinute(data, typeValue) {
+	if (!data.created_at) return false;
+	const createdDate = new Date(data.created_at);
+	if (isNaN(createdDate.getTime())) return false;
+	const now = new Date();
+	const diffHours = (now - createdDate) / (1000 * 60 * 60);
+	if (typeValue === 1) {
+		return diffHours < 72; // FERIE: Last Minute se < 72h
+	} else if (typeValue === 2) {
+		return diffHours < 24; // PERMESSO: Last Minute se < 24h
+	}
+	return false;
+}
+
+/**
+ * Verifica se una richiesta è "In Scadenza" in base al tipo e alla data di inizio
+ * @param {Object} data - Oggetto contenente i dati della richiesta
+ * @param {number} typeValue - Tipo di richiesta: 1=Ferie, 2=Permessi
+ * @returns {boolean} True se la richiesta è In Scadenza
+ */
+function isInScadenza(data, typeValue) {
+	if (!data.dataInizio) return false;
+	const dataInizio = new Date(data.dataInizio + 'T00:00:00');
+	if (isNaN(dataInizio.getTime())) return false;
+	const oggi = new Date();
+	oggi.setHours(0, 0, 0, 0);
+	dataInizio.setHours(0, 0, 0, 0);
+	if (typeValue === 1) {
+		const diffDays = (dataInizio - oggi) / (1000 * 60 * 60 * 24);
+		return diffDays >= 0 && diffDays < 21; // FERIE: < 21 giorni
+	} else if (typeValue === 2) {
+		let dataInizioConOra = new Date(dataInizio);
+		const giornataIntera = data.giornataIntera === 1 || data.giornataIntera === true;
+		if (data.oraInizio && !giornataIntera) {
+			const oraParts = data.oraInizio.split(':');
+			if (oraParts.length >= 2) {
+				const ore = parseInt(oraParts[0], 10);
+				const minuti = parseInt(oraParts[1], 10);
+				if (!isNaN(ore) && !isNaN(minuti)) {
+					dataInizioConOra.setHours(ore, minuti, 0, 0);
+				}
+			}
+		}
+		const oraAttuale = new Date();
+		const diffHours = (dataInizioConOra - oraAttuale) / (1000 * 60 * 60);
+		return diffHours >= 0 && diffHours < 24; // PERMESSO: < 24h
+	}
+	return false;
+}
+
+/**
  * Estrae e formatta la quantità (giorni per FERIE, ore per PERMESSO) da moorea_obj.meta
  * Per FERIE: estrae meta.days e formatta come "{days}g" (es. "3g")
  * Per PERMESSO: estrae meta.hours e formatta come "{hours}h" (es. "5h")
+ * Usa normalizeQuantity per normalizzare i valori
  * @param {Object} data - Oggetto contenente i dati della richiesta
  * @returns {string} Stringa formattata con quantità (es. "3g" o "5h")
  */
@@ -76,17 +164,20 @@ function extractQuantityFromMoorea(data) {
 		const isPermesso = typeValue === 2 || data.type_name === 'Permessi' || data.type_name === 'PERMESSO';
 
 		if (isPermesso && typeof meta.hours === 'number') {
-			// PERMESSO: usa meta.hours e formatta come "5h"
-			return meta.hours + 'h';
+			// PERMESSO: usa meta.hours e normalizza, poi formatta come "5h"
+			const normalizedHours = normalizeQuantity(meta.hours, 'hours');
+			return normalizedHours + 'h';
 		} else if (!isPermesso && typeof meta.days === 'number') {
-			// FERIE: usa meta.days e formatta come "3g"
-			return meta.days + 'g';
+			// FERIE: usa meta.days e normalizza, poi formatta come "3g"
+			const normalizedDays = normalizeQuantity(meta.days, 'days');
+			return normalizedDays + 'g';
 		}
 	}
 	// Fallback ai campi legacy
 	// Se abbiamo ore legacy, assumiamo che sia PERMESSO
 	if (typeof data.ore === 'number' && data.ore > 0) {
-		return data.ore + 'h';
+		const normalizedHours = normalizeQuantity(data.ore, 'hours');
+		return normalizedHours + 'h';
 	}
 	// Default: restituisci stringa vuota se non ci sono dati
 	return '';
@@ -215,32 +306,143 @@ function extractDateInfoFromMoorea(data) {
 
 /**
  * Converte colore in RGB (Helper)
+ * Supporta hex (#RRGGBB), rgb(), hsl(), nomi CSS
  */
 function parseColorToRgb(color) {
-    if (!color || typeof color !== 'string') return null;
-    const trimmedColor = color.trim();
-    if (trimmedColor.startsWith('#')) {
-        const hex = trimmedColor.slice(1);
-        if (hex.length === 6) {
-            return {
-                r: parseInt(hex.substring(0, 2), 16),
-                g: parseInt(hex.substring(2, 4), 16),
-                b: parseInt(hex.substring(4, 6), 16)
-            };
-        }
-    }
-    return null;
+	if (!color || typeof color !== 'string') return null;
+	const trimmedColor = color.trim();
+	
+	// Hex color (#RRGGBB)
+	if (trimmedColor.startsWith('#')) {
+		const hex = trimmedColor.slice(1);
+		if (hex.length === 6) {
+			return {
+				r: parseInt(hex.substring(0, 2), 16),
+				g: parseInt(hex.substring(2, 4), 16),
+				b: parseInt(hex.substring(4, 6), 16)
+			};
+		}
+		if (hex.length === 3) {
+			// Short hex (#RGB)
+			return {
+				r: parseInt(hex[0] + hex[0], 16),
+				g: parseInt(hex[1] + hex[1], 16),
+				b: parseInt(hex[2] + hex[2], 16)
+			};
+		}
+	}
+	
+	// RGB color (rgb(r, g, b) or rgba(r, g, b, a))
+	const rgbMatch = trimmedColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+	if (rgbMatch) {
+		return {
+			r: parseInt(rgbMatch[1], 10),
+			g: parseInt(rgbMatch[2], 10),
+			b: parseInt(rgbMatch[3], 10)
+		};
+	}
+	
+	// HSL color (hsl(h, s%, l%) or hsla(h, s%, l%, a))
+	const hslMatch = trimmedColor.match(/hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/i);
+	if (hslMatch) {
+		const h = parseInt(hslMatch[1], 10) / 360;
+		const s = parseInt(hslMatch[2], 10) / 100;
+		const l = parseInt(hslMatch[3], 10) / 100;
+		
+		const c = (1 - Math.abs(2 * l - 1)) * s;
+		const x = c * (1 - Math.abs((h * 6) % 2 - 1));
+		const m = l - c / 2;
+		
+		let r, g, b;
+		if (h < 1/6) {
+			r = c; g = x; b = 0;
+		} else if (h < 2/6) {
+			r = x; g = c; b = 0;
+		} else if (h < 3/6) {
+			r = 0; g = c; b = x;
+		} else if (h < 4/6) {
+			r = 0; g = x; b = c;
+		} else if (h < 5/6) {
+			r = x; g = 0; b = c;
+		} else {
+			r = c; g = 0; b = x;
+		}
+		
+		return {
+			r: Math.round((r + m) * 255),
+			g: Math.round((g + m) * 255),
+			b: Math.round((b + m) * 255)
+		};
+	}
+	
+	// CSS color names - mappatura base
+	const colorNames = {
+		'black': { r: 0, g: 0, b: 0 },
+		'white': { r: 255, g: 255, b: 255 },
+		'red': { r: 255, g: 0, b: 0 },
+		'green': { r: 0, g: 128, b: 0 },
+		'blue': { r: 0, g: 0, b: 255 },
+		'yellow': { r: 255, g: 255, b: 0 },
+		'cyan': { r: 0, g: 255, b: 255 },
+		'magenta': { r: 255, g: 0, b: 255 },
+		'orange': { r: 255, g: 165, b: 0 },
+		'firebrick': { r: 178, g: 34, b: 34 }
+	};
+	
+	const lowerColor = trimmedColor.toLowerCase();
+	if (colorNames[lowerColor]) {
+		return colorNames[lowerColor];
+	}
+	
+	// Fallback: prova a usare un elemento temporaneo per ottenere il colore
+	try {
+		const tempEl = document.createElement('div');
+		tempEl.style.color = trimmedColor;
+		document.body.appendChild(tempEl);
+		const computedColor = window.getComputedStyle(tempEl).color;
+		document.body.removeChild(tempEl);
+		
+		const rgbComputed = computedColor.match(/\d+/g);
+		if (rgbComputed && rgbComputed.length >= 3) {
+			return {
+				r: parseInt(rgbComputed[0], 10),
+				g: parseInt(rgbComputed[1], 10),
+				b: parseInt(rgbComputed[2], 10)
+			};
+		}
+	} catch (e) {
+		// Ignora errori
+	}
+	
+	return null;
 }
 
 /**
- * Calcola luminosità per colore testo (Helper)
+ * Calcola luminosità relativa per colore testo (Helper)
+ * Implementazione WCAG completa con gamma correction
  */
 function getRelativeLuminance(color) {
-    const rgb = parseColorToRgb(color);
-    if (!rgb) return 0.5;
-    const r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255;
-    // Semplificazione luminosità
-    return (0.2126 * r + 0.7152 * g + 0.0722 * b);
+	const rgb = parseColorToRgb(color);
+	if (!rgb) return 0.5;
+	
+	// Normalizza valori RGB a 0-1
+	const r = rgb.r / 255;
+	const g = rgb.g / 255;
+	const b = rgb.b / 255;
+	
+	// Applica gamma correction (linearizzazione)
+	const linearize = (val) => {
+		return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
+	};
+	
+	const rLinear = linearize(r);
+	const gLinear = linearize(g);
+	const bLinear = linearize(b);
+	
+	// Calcola luminosità relativa secondo WCAG
+	const luminance = 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+	
+	return luminance;
 }
 
 
@@ -312,6 +514,8 @@ function applyTaskBadgeStyle(badgeElement, taskColor) {
 
 
 function createApprovalRow(data) {
+	let badgeSlotCounter = 0;
+	
     const row = document.createElement('div');
     row.className = 'approval-row';
     row.setAttribute('data-request-id', data.id);
@@ -385,6 +589,17 @@ function createApprovalRow(data) {
 
     typeWrapper.appendChild(typeBadge);
 
+    // Badge Last Minute
+    const showLastMinute = isLastMinute(data, typeValue);
+    if (showLastMinute) {
+        const lmBadge = document.createElement('div');
+        lmBadge.className = 'status-floating-badge badge-last-minute';
+        lmBadge.textContent = 'LAST MINUTE';
+        badgeSlotCounter++;
+        lmBadge.classList.add('badge-slot-' + badgeSlotCounter);
+        typeWrapper.appendChild(lmBadge);
+    }
+
     // --- 2.2 Quantità (Wrapper min-width: 45px) ---
     const quantityWrapper = document.createElement('div');
     quantityWrapper.className = 'rd-wrapper-quantity';
@@ -400,22 +615,42 @@ function createApprovalRow(data) {
         const unitChar = quantityText.slice(-1).toLowerCase();
         // Estrai la parte numerica
         const numberVal = quantityText.slice(0, -1);
+        const numericValue = parseFloat(numberVal);
 
         let label = '';
         if (unitChar === 'g') {
             label = (numberVal === '1') ? 'giorno' : 'giorni';
-        } else if (unitChar === 'h') {
-            label = (numberVal === '1') ? 'ora' : 'ore';
-        }
-
-        if (label) {
-            // Se abbiamo riconosciuto il formato, creiamo l'HTML strutturato
             quantitySpan.innerHTML = `
                 <span class="qty-number">${numberVal}</span>
-                <span class="qty-label">${label}</span>
+                <span class="qty-label pt-1">${label}</span>
             `;
+        } else if (unitChar === 'h') {
+            label = (numberVal === '1') ? 'ora' : 'ore';
+            const isInteger = Number.isInteger(numericValue);
+
+            if (isInteger) {
+                quantitySpan.innerHTML = `
+                    <span class="qty-number">${numberVal}</span>
+                    <span class="qty-label">${label}</span>
+                `;
+            } else {
+                // ORE NON INTERE (es. 2.5, 4.5): mostra "2 h 30 min" sulla stessa riga, "ORE" centrato sotto
+                const hoursInt = Math.floor(numericValue);
+                quantitySpan.innerHTML = `
+                    <span class="qty-columns-wrapper">
+                        <span class="qty-row-top">
+                            <span class="qty-number">${hoursInt}</span>
+                            <span class="qty-hours-h pe-1">h</span>
+                            <span class="qty-minutes-number">30</span>
+                            <span class="qty-minutes-label">min</span>
+                        </span>
+                        <span class="qty-row-bottom">
+                            <span class="qty-label">ORE</span>
+                        </span>
+                    </span>
+                `;
+            }
         } else {
-            // Fallback per formati non standard
             quantitySpan.textContent = quantityText;
         }
     } else {
@@ -452,11 +687,16 @@ function createApprovalRow(data) {
         }
 
         if (start) {
-            const text = (start === end) ? `${start}` : `Da  ${start}  a  ${end}`;
+            let htmlText;
+            if (start === end) {
+                htmlText = `Il ${start}`;
+            } else {
+                htmlText = `<span class="date-preposition">Da</span> ${start} <span class="date-preposition">a</span> ${end}`;
+            }
             
             const simpleSpan = document.createElement('span');
-            simpleSpan.className = 'date-range-normal fw-bold'; 
-            simpleSpan.textContent = text;
+            simpleSpan.className = 'date-range-normal';
+            simpleSpan.innerHTML = htmlText;
             textContainer.appendChild(simpleSpan);
         }
         
@@ -484,6 +724,17 @@ function createApprovalRow(data) {
     }
 
     datetimeWrapper.appendChild(textContainer);
+
+    // Badge In Scadenza
+    const showInScadenza = isInScadenza(data, typeValue);
+    if (showInScadenza) {
+        const scadenzaBadge = document.createElement('div');
+        scadenzaBadge.className = 'status-floating-badge badge-scadenza';
+        scadenzaBadge.textContent = 'IN SCADENZA';
+        badgeSlotCounter++;
+        scadenzaBadge.classList.add('badge-slot-' + badgeSlotCounter);
+        datetimeWrapper.appendChild(scadenzaBadge);
+    }
 
     // Appendere i wrapper al contenitore principale
     requestDetails.appendChild(typeWrapper);

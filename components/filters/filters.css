@@ -24,6 +24,11 @@
     gap: 6.6px;
 }
 
+/* Filter Group Hidden */
+.filter-group.hidden {
+    display: none;
+}
+
 /* Filter Label */
 .filter-label {
     font-size: 0.833rem; /* 11px */

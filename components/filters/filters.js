@@ -8,6 +8,7 @@ const API_ENDPOINT = '/get_leaves';
 const API_TIMEOUT = 30000; // 30 secondi
 const API_BEARER_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3Njg5MDc0MjMsImV4cCI6MTc3MDYzNTQyMywidWlkIjoyNjg1LCJ1c2VybmFtZSI6IkdOR01aTzA0RTEzWjM1NEUifQ.3AV7DDRUf1AgRJyPh_cvDd3u9_Gf7-YOSEX-KfUIAEg';
 
+
 // Riferimenti globali
 let allRequestsData = [];
 let filteredRequestsData = [];
@@ -467,6 +468,44 @@ function getUniqueValuesWithIds(data, nameKey, idKey, fallbackNameKey = null) {
 }
 
 /**
+ * Conta i reparti unici dai dati delle richieste
+ * @param {Array} requestsData - Array di dati delle richieste
+ * @returns {number} Numero di reparti unici (escludendo null/vuoti)
+ */
+function countUniqueReparti(requestsData) {
+    if (!Array.isArray(requestsData) || requestsData.length === 0) {
+        return 0;
+    }
+    const repartiSet = new Set();
+    requestsData.forEach(item => {
+        const reparto = item.department_name || item.reparto;
+        if (reparto && String(reparto).trim() !== '') {
+            repartiSet.add(String(reparto).trim());
+        }
+    });
+    return repartiSet.size;
+}
+
+/**
+ * Conta le mansioni uniche dai dati delle richieste
+ * @param {Array} requestsData - Array di dati delle richieste
+ * @returns {number} Numero di mansioni uniche (escludendo null/vuoti)
+ */
+function countUniqueMansioni(requestsData) {
+    if (!Array.isArray(requestsData) || requestsData.length === 0) {
+        return 0;
+    }
+    const mansioniSet = new Set();
+    requestsData.forEach(item => {
+        const mansione = item.task_name || item.mansione;
+        if (mansione && String(mansione).trim() !== '') {
+            mansioniSet.add(String(mansione).trim());
+        }
+    });
+    return mansioniSet.size;
+}
+
+/**
  * Aggiorna i dati delle richieste e ricarica i filtri dinamici
  * @param {Array} requestsData - Array completo dei dati delle richieste aggiornati
  */
@@ -667,6 +706,39 @@ function buildFiltersFromConfig(configData) {
     }
 
     buildStatusFilter();
+
+    // Nascondi/mostra filtro REPARTO in base al numero di reparti da configData.blocks
+    const repartoSelectFromConfig = document.getElementById('filterReparto');
+    if (repartoSelectFromConfig) {
+        const repartoFilterGroup = repartoSelectFromConfig.closest('.filter-group');
+        if (repartoFilterGroup) {
+            const repartiCount = Array.isArray(configData.blocks) ? configData.blocks.length : 0;
+            if (repartiCount < 2) {
+                repartoFilterGroup.classList.add('hidden');
+                // Reset del filtro quando viene nascosto
+                repartoSelectFromConfig.value = '';
+            } else {
+                repartoFilterGroup.classList.remove('hidden');
+            }
+        }
+    }
+
+    // Nascondi/mostra filtro MANSIONE in base al numero di mansioni da configData.tasks
+    const mansioneSelectFromConfig = document.getElementById('filterMansione');
+    if (mansioneSelectFromConfig) {
+        const mansioneFilterGroup = mansioneSelectFromConfig.closest('.filter-group');
+        if (mansioneFilterGroup) {
+            const mansioniCount = Array.isArray(configData.tasks) ? configData.tasks.length : 0;
+            if (mansioniCount < 2) {
+                mansioneFilterGroup.classList.add('hidden');
+                // Reset del filtro quando viene nascosto
+                mansioneSelectFromConfig.value = '';
+            } else {
+                mansioneFilterGroup.classList.remove('hidden');
+            }
+        }
+    }
+
     return success;
 }
 
@@ -740,6 +812,38 @@ function updateFilterOptions(requests) {
             statusSelect.appendChild(option);
         });
         if(currentVal) statusSelect.value = currentVal;
+    }
+
+    // Nascondi/mostra filtro REPARTO in base al numero di reparti unici
+    const repartoCount = countUniqueReparti(requests);
+    const repartoSelect = document.getElementById('filterReparto');
+    if (repartoSelect) {
+        const repartoFilterGroup = repartoSelect.closest('.filter-group');
+        if (repartoFilterGroup) {
+            if (repartoCount < 2) {
+                repartoFilterGroup.classList.add('hidden');
+                // Reset del filtro quando viene nascosto
+                repartoSelect.value = '';
+            } else {
+                repartoFilterGroup.classList.remove('hidden');
+            }
+        }
+    }
+
+    // Nascondi/mostra filtro MANSIONE in base al numero di mansioni uniche
+    const mansioneCount = countUniqueMansioni(requests);
+    const mansioneSelect = document.getElementById('filterMansione');
+    if (mansioneSelect) {
+        const mansioneFilterGroup = mansioneSelect.closest('.filter-group');
+        if (mansioneFilterGroup) {
+            if (mansioneCount < 2) {
+                mansioneFilterGroup.classList.add('hidden');
+                // Reset del filtro quando viene nascosto
+                mansioneSelect.value = '';
+            } else {
+                mansioneFilterGroup.classList.remove('hidden');
+            }
+        }
     }
 }
 
@@ -1232,16 +1336,30 @@ function applyFilters() {
         filtered = filtered.filter(req => req.stato === statoValue);
     }
 
-    // Filtro reparto
-    const repartoValue = document.getElementById('filterReparto')?.value || '';
-    if (repartoValue) {
-        filtered = filtered.filter(req => req.reparto === repartoValue);
+    // Filtro reparto (solo se il filtro non è nascosto)
+    const repartoSelect = document.getElementById('filterReparto');
+    const repartoFilterGroup = repartoSelect?.closest('.filter-group');
+    if (repartoSelect && repartoFilterGroup && !repartoFilterGroup.classList.contains('hidden')) {
+        const repartoValue = repartoSelect.value || '';
+        if (repartoValue) {
+            filtered = filtered.filter(req => {
+                const reqReparto = req.department_name || req.reparto || '';
+                return reqReparto === repartoValue;
+            });
+        }
     }
 
-    // Filtro mansione
-    const mansioneValue = document.getElementById('filterMansione')?.value || '';
-    if (mansioneValue) {
-        filtered = filtered.filter(req => req.mansione === mansioneValue);
+    // Filtro mansione (solo se il filtro non è nascosto)
+    const mansioneSelect = document.getElementById('filterMansione');
+    const mansioneFilterGroup = mansioneSelect?.closest('.filter-group');
+    if (mansioneSelect && mansioneFilterGroup && !mansioneFilterGroup.classList.contains('hidden')) {
+        const mansioneValue = mansioneSelect.value || '';
+        if (mansioneValue) {
+            filtered = filtered.filter(req => {
+                const reqMansione = req.task_name || req.mansione || '';
+                return reqMansione === mansioneValue;
+            });
+        }
     }
 
     // Filtro periodo (dal calendario di destra)
@@ -1362,23 +1480,36 @@ function renderList(data) {
         return true;
     });
 
-    const groups = {};
-    filtered.forEach(req => {
-        const rep = req.department_name || req.reparto || 'Nessun reparto';
-        if (!groups[rep]) groups[rep] = [];
-        groups[rep].push(req);
-    });
+    // Conta i reparti unici per decidere se mostrare raggruppamento e intestazioni
+    const repartiCount = countUniqueReparti(data);
 
-    Object.keys(groups).sort().forEach(rep => {
-        const label = document.createElement('div');
-        label.className = 'reparto-section-label pt-4';
-        label.textContent = rep.toUpperCase();
-        list.appendChild(label);
-
-        groups[rep].forEach(req => {
-            list.appendChild(createApprovalRow(req));
+    // Se ci sono meno di 2 reparti, renderizza senza raggruppamento e senza intestazioni
+    if (repartiCount < 2) {
+        // Renderizza direttamente tutte le richieste senza raggruppamento
+        filtered.forEach(function(requestData) {
+            const row = createApprovalRow(requestData);
+            list.appendChild(row);
         });
-    });
+    } else {
+        // Raggruppa le richieste per reparto (logica esistente)
+        const groups = {};
+        filtered.forEach(req => {
+            const rep = req.department_name || req.reparto || 'Nessun reparto';
+            if (!groups[rep]) groups[rep] = [];
+            groups[rep].push(req);
+        });
+
+        Object.keys(groups).sort().forEach(rep => {
+            const label = document.createElement('div');
+            label.className = 'reparto-section-label pt-4';
+            label.textContent = rep.toUpperCase();
+            list.appendChild(label);
+
+            groups[rep].forEach(req => {
+                list.appendChild(createApprovalRow(req));
+            });
+        });
+    }
     
     if(typeof initHeaderShadows === 'function') initHeaderShadows();
 }
@@ -1475,13 +1606,21 @@ function hasAnyActiveFilters() {
     const statoValue = document.getElementById('filterStato')?.value || '';
     if (statoValue) return true;
 
-    // Verifica reparto
-    const repartoValue = document.getElementById('filterReparto')?.value || '';
-    if (repartoValue) return true;
+    // Verifica reparto (solo se il filtro non è nascosto)
+    const repartoSelect = document.getElementById('filterReparto');
+    const repartoFilterGroup = repartoSelect?.closest('.filter-group');
+    if (repartoSelect && repartoFilterGroup && !repartoFilterGroup.classList.contains('hidden')) {
+        const repartoValue = repartoSelect.value || '';
+        if (repartoValue) return true;
+    }
 
-    // Verifica mansione
-    const mansioneValue = document.getElementById('filterMansione')?.value || '';
-    if (mansioneValue) return true;
+    // Verifica mansione (solo se il filtro non è nascosto)
+    const mansioneSelect = document.getElementById('filterMansione');
+    const mansioneFilterGroup = mansioneSelect?.closest('.filter-group');
+    if (mansioneSelect && mansioneFilterGroup && !mansioneFilterGroup.classList.contains('hidden')) {
+        const mansioneValue = mansioneSelect.value || '';
+        if (mansioneValue) return true;
+    }
 
     // Verifica periodo (dal calendario di destra)
     if (window.selectedPeriod && window.selectedPeriod.startDate && window.selectedPeriod.endDate) {
@@ -1549,32 +1688,40 @@ function updateActiveFiltersChips() {
         });
     }
 
-    // Reparto
-    const repartoValue = document.getElementById('filterReparto')?.value || '';
-    if (repartoValue) {
-        activeFilters.push({
-            key: 'reparto',
-            label: 'Reparto',
-            value: repartoValue,
-            remove: () => {
-                document.getElementById('filterReparto').value = '';
-                handleFilterChange();
-            }
-        });
+    // Reparto (solo se il filtro non è nascosto)
+    const repartoSelect = document.getElementById('filterReparto');
+    const repartoFilterGroup = repartoSelect?.closest('.filter-group');
+    if (repartoSelect && repartoFilterGroup && !repartoFilterGroup.classList.contains('hidden')) {
+        const repartoValue = repartoSelect.value || '';
+        if (repartoValue) {
+            activeFilters.push({
+                key: 'reparto',
+                label: 'Reparto',
+                value: repartoValue,
+                remove: () => {
+                    repartoSelect.value = '';
+                    handleFilterChange();
+                }
+            });
+        }
     }
 
-    // Mansione
-    const mansioneValue = document.getElementById('filterMansione')?.value || '';
-    if (mansioneValue) {
-        activeFilters.push({
-            key: 'mansione',
-            label: 'Mansione',
-            value: mansioneValue,
-            remove: () => {
-                document.getElementById('filterMansione').value = '';
-                handleFilterChange();
-            }
-        });
+    // Mansione (solo se il filtro non è nascosto)
+    const mansioneSelect = document.getElementById('filterMansione');
+    const mansioneFilterGroup = mansioneSelect?.closest('.filter-group');
+    if (mansioneSelect && mansioneFilterGroup && !mansioneFilterGroup.classList.contains('hidden')) {
+        const mansioneValue = mansioneSelect.value || '';
+        if (mansioneValue) {
+            activeFilters.push({
+                key: 'mansione',
+                label: 'Mansione',
+                value: mansioneValue,
+                remove: () => {
+                    mansioneSelect.value = '';
+                    handleFilterChange();
+                }
+            });
+        }
     }
 
     // Periodo (dal calendario di destra)

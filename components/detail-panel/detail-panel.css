@@ -174,18 +174,18 @@
     font-weight: 700;
     color: #000000;
     padding: 2px 0;
-    border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 2px;
+    margin-top: 6px;
+	margin-bottom: 2px;
 }
 
 /* Calendar Grid */
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
     width: 100%;
-    background-color: #e0e0e0; /* Assicura linee griglia visibili col gap */
+    background-color: #ffffff; /* Assicura linee griglia visibili col gap */
     border: 1px solid #e0e0e0;
+	padding: 12px
 }
 
 /* Calendar Weekday Header */
@@ -216,7 +216,7 @@
 }
 
 .calendar-day.empty {
-    background-color: #fcfcfc;
+    background-color: #ffffff;
     border: none;
     cursor: default;
 }

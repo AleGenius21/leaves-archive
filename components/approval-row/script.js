@@ -92,61 +92,6 @@ function normalizeQuantity(value, unit) {
 	return value;
 }
 
-/**
- * Verifica se una richiesta è "Last Minute" in base al tipo e alla data di creazione
- * @param {Object} data - Oggetto contenente i dati della richiesta
- * @param {number} typeValue - Tipo di richiesta: 1=Ferie, 2=Permessi
- * @returns {boolean} True se la richiesta è Last Minute
- */
-function isLastMinute(data, typeValue) {
-	if (!data.created_at) return false;
-	const createdDate = new Date(data.created_at);
-	if (isNaN(createdDate.getTime())) return false;
-	const now = new Date();
-	const diffHours = (now - createdDate) / (1000 * 60 * 60);
-	if (typeValue === 1) {
-		return diffHours < 72; // FERIE: Last Minute se < 72h
-	} else if (typeValue === 2) {
-		return diffHours < 24; // PERMESSO: Last Minute se < 24h
-	}
-	return false;
-}
-
-/**
- * Verifica se una richiesta è "In Scadenza" in base al tipo e alla data di inizio
- * @param {Object} data - Oggetto contenente i dati della richiesta
- * @param {number} typeValue - Tipo di richiesta: 1=Ferie, 2=Permessi
- * @returns {boolean} True se la richiesta è In Scadenza
- */
-function isInScadenza(data, typeValue) {
-	if (!data.dataInizio) return false;
-	const dataInizio = new Date(data.dataInizio + 'T00:00:00');
-	if (isNaN(dataInizio.getTime())) return false;
-	const oggi = new Date();
-	oggi.setHours(0, 0, 0, 0);
-	dataInizio.setHours(0, 0, 0, 0);
-	if (typeValue === 1) {
-		const diffDays = (dataInizio - oggi) / (1000 * 60 * 60 * 24);
-		return diffDays >= 0 && diffDays < 21; // FERIE: < 21 giorni
-	} else if (typeValue === 2) {
-		let dataInizioConOra = new Date(dataInizio);
-		const giornataIntera = data.giornataIntera === 1 || data.giornataIntera === true;
-		if (data.oraInizio && !giornataIntera) {
-			const oraParts = data.oraInizio.split(':');
-			if (oraParts.length >= 2) {
-				const ore = parseInt(oraParts[0], 10);
-				const minuti = parseInt(oraParts[1], 10);
-				if (!isNaN(ore) && !isNaN(minuti)) {
-					dataInizioConOra.setHours(ore, minuti, 0, 0);
-				}
-			}
-		}
-		const oraAttuale = new Date();
-		const diffHours = (dataInizioConOra - oraAttuale) / (1000 * 60 * 60);
-		return diffHours >= 0 && diffHours < 24; // PERMESSO: < 24h
-	}
-	return false;
-}
 
 /**
  * Estrae e formatta la quantità (giorni per FERIE, ore per PERMESSO) da moorea_obj.meta
@@ -452,10 +397,22 @@ function getRelativeLuminance(color) {
  * @param {HTMLElement} badgeElement - Elemento DOM del badge reparto
  * @param {string} departmentColor - Colore del reparto (es. "#FF0000", "rgb(255,0,0)", "hsl(0,100%,50%)")
  */
-function applyBadgeStyle(element, color) {
-    if (!element || !color) return;
-    element.style.backgroundColor = color;
-    element.style.color = getRelativeLuminance(color) > 0.45 ? '#000000' : '#ffffff';
+function applyDepartmentBadgeStyle(badgeElement, departmentColor) {
+	if (!badgeElement || !departmentColor) {
+		// Se non c'è colore, mantieni lo stile CSS di default
+		return;
+	}
+
+	// Applica il colore di sfondo
+	badgeElement.style.backgroundColor = departmentColor;
+
+	// Calcola la luminosità relativa per determinare il colore del testo
+	const luminance = getRelativeLuminance(departmentColor);
+
+	// Se il colore è chiaro (luminosità > 0.5), usa testo nero, altrimenti bianco
+	// Usiamo una soglia leggermente più bassa (0.45) per garantire migliore leggibilità
+	const textColor = luminance > 0.45 ? '#000000' : '#ffffff';
+	badgeElement.style.color = textColor;
 }
 
 /**
@@ -514,258 +471,283 @@ function applyTaskBadgeStyle(badgeElement, taskColor) {
 
 
 function createApprovalRow(data) {
-	let badgeSlotCounter = 0;
-	
-    const row = document.createElement('div');
-    row.className = 'approval-row';
-    row.setAttribute('data-request-id', data.id);
+	// Creazione elemento riga principale
+	const row = document.createElement('div');
+	row.className = 'approval-row ms-1 me-3 mt-1';
+	row.setAttribute('data-request-id', data.id || Math.random().toString(36).substr(2, 9));
 
-    // --- Profilo Dipendente ---
-    const employeeProfile = document.createElement('div');
-    employeeProfile.className = 'employee-profile';
+	// ---------------------------------------------------------
+	// SEZIONE 1: Profilo Dipendente (Sinistra)
+	// ---------------------------------------------------------
+	const employeeProfile = document.createElement('div');
+	employeeProfile.className = 'employee-profile';
 
-    const avatar = document.createElement('img');
-    avatar.className = 'employee-avatar';
-    // NUOVO CAMPO: profile_pic, fallback su immagine, fallback su pravatar
-    avatar.src = data.profile_pic || data.immagine || `https://i.pravatar.cc/43?img=${(data.id % 70) + 1}`;
-    avatar.alt = data.nominativo || data.nome;
-    avatar.onerror = function() { this.src = `https://i.pravatar.cc/43?img=${(data.id % 70) + 1}`; };
+	const avatar = document.createElement('img');
+	avatar.className = 'employee-avatar';
 
-    const employeeInfo = document.createElement('div');
-    employeeInfo.className = 'employee-info';
+	// Funzione interna per generare URL avatar
+	function generateAvatarUrl(data) {
+		if (data.profile_pic) return data.profile_pic;
+		if (data.immagine) return data.immagine;
 
-    const employeeName = document.createElement('p');
-    employeeName.className = 'employee-name';
-    // NUOVO CAMPO: nominativo
-    employeeName.textContent = data.nominativo || data.nome || 'Sconosciuto';
+		let seed = data.id || 0;
+		const nome = data.nominativo || data.nome || '';
+		if (!seed && nome) {
+			let hash = 0;
+			for (let i = 0; i < nome.length; i++) {
+				hash = ((hash << 5) - hash) + nome.charCodeAt(i);
+				hash = hash & hash;
+			}
+			seed = Math.abs(hash % 70) + 1;
+		}
+		return `https://i.pravatar.cc/43?img=${seed || Math.floor(Math.random() * 70) + 1}`;
+	}
 
-    const employeeBadges = document.createElement('div');
-    employeeBadges.className = 'employee-badges';
+	avatar.src = generateAvatarUrl(data);
+	const nome = data.nominativo || data.nome || '';
+	avatar.alt = nome;
+	avatar.onerror = function () {
+		this.src = `https://i.pravatar.cc/43?img=${Math.floor(Math.random() * 70) + 1}`;
+	};
 
-    // Mansione
-    const badgeMansione = document.createElement('span');
-    badgeMansione.className = 'badge-mansione';
-    badgeMansione.textContent = data.task_name || data.mansione || '';
-    if (data.task_color) applyTaskBadgeStyle(badgeMansione, data.task_color);
+	const employeeInfo = document.createElement('div');
+	employeeInfo.className = 'employee-info';
 
-    // Reparto
-    const badgeReparto = document.createElement('span');
-    badgeReparto.className = 'badge-reparto';
-    badgeReparto.textContent = data.department_name || data.reparto || '';
-    if (data.department_color) applyBadgeStyle(badgeReparto, data.department_color);
+	const employeeName = document.createElement('p');
+	employeeName.className = 'employee-name';
+	employeeName.textContent = nome;
 
-    if(badgeMansione.textContent) employeeBadges.appendChild(badgeMansione);
-    if(badgeReparto.textContent) employeeBadges.appendChild(badgeReparto);
-    
-    employeeInfo.appendChild(employeeName);
-    employeeInfo.appendChild(employeeBadges);
-    employeeProfile.appendChild(avatar);
-    employeeProfile.appendChild(employeeInfo);
+	const employeeBadges = document.createElement('div');
+	employeeBadges.className = 'employee-badges';
 
-    // ---------------------------------------------------------
-    // SEZIONE 2: Dettagli Richiesta (Centro) con WRAPPER
-    // ---------------------------------------------------------
-    const requestDetails = document.createElement('div');
-    requestDetails.className = 'request-details';
+	// Badge Mansione
+	const taskName = data.task_name || data.mansione;
+	if (taskName) {
+		const badgeMansione = document.createElement('span');
+		badgeMansione.className = 'badge-mansione';
+		badgeMansione.textContent = taskName;
+		if (data.task_color) {
+			applyTaskBadgeStyle(badgeMansione, data.task_color);
+		}
+		employeeBadges.appendChild(badgeMansione);
+	}
 
-    // Determina tipo
-    const typeValue = data.type !== undefined ? data.type : (data.type_id !== undefined ? data.type_id : null);
-    const tipoRichiesta = data.type_name || data.tipo_richiesta || '';
-    const isPermesso = typeValue === 2 || tipoRichiesta === 'Permessi' || tipoRichiesta === 'PERMESSO';
+	// Badge Reparto
+	const badgeReparto = document.createElement('span');
+	badgeReparto.className = 'badge-reparto';
+	const deptName = data.department_name || data.reparto;
+	const deptId = data.department_id;
+	const deptColor = data.department_color;
 
-    // --- 2.1 Tipo Richiesta (Wrapper min-width: 90px) ---
-    const typeWrapper = document.createElement('div');
-    typeWrapper.className = 'rd-wrapper-type'; // CSS include position: relative
+	if (!deptId || !deptName || !deptColor) {
+		badgeReparto.textContent = 'Nessun reparto';
+		badgeReparto.style.backgroundColor = '#E1E5E9';
+		badgeReparto.style.color = '#666666';
+	} else {
+		badgeReparto.textContent = deptName;
+		applyDepartmentBadgeStyle(badgeReparto, deptColor);
+	}
 
-    const typeBadge = document.createElement('span');
-    typeBadge.className = 'request-type-badge';
+	employeeBadges.appendChild(badgeReparto);
+	employeeInfo.appendChild(employeeName);
+	employeeInfo.appendChild(employeeBadges);
+	employeeProfile.appendChild(avatar);
+	employeeProfile.appendChild(employeeInfo);
 
-    if (tipoRichiesta === 'Ferie' || tipoRichiesta === 'FERIE' || typeValue === 1) {
-        typeBadge.classList.add('badge-ferie');
-    } else if (tipoRichiesta === 'Permessi' || tipoRichiesta === 'PERMESSO' || typeValue === 2) {
-        typeBadge.classList.add('badge-permessi');
-    }
-    typeBadge.textContent = tipoRichiesta || '';
+	// ---------------------------------------------------------
+	// SEZIONE 2: Dettagli Richiesta (Centro) con WRAPPER
+	// ---------------------------------------------------------
+	const requestDetails = document.createElement('div');
+	requestDetails.className = 'request-details';
 
-    typeWrapper.appendChild(typeBadge);
+	// Determina tipo
+	const typeValue = data.type !== undefined ? data.type : (data.type_id !== undefined ? data.type_id : null);
 
-    // Badge Last Minute
-    const showLastMinute = isLastMinute(data, typeValue);
-    if (showLastMinute) {
-        const lmBadge = document.createElement('div');
-        lmBadge.className = 'status-floating-badge badge-last-minute';
-        lmBadge.textContent = 'LAST MINUTE';
-        badgeSlotCounter++;
-        lmBadge.classList.add('badge-slot-' + badgeSlotCounter);
-        typeWrapper.appendChild(lmBadge);
-    }
+	// --- 2.1 Tipo Richiesta (Wrapper min-width: 85px) ---
+	const typeWrapper = document.createElement('div');
+	typeWrapper.className = 'rd-wrapper-type'; // CSS include position: relative
 
-    // --- 2.2 Quantità (Wrapper min-width: 45px) ---
-    const quantityWrapper = document.createElement('div');
-    quantityWrapper.className = 'rd-wrapper-quantity';
+	const typeBadge = document.createElement('span');
+	typeBadge.className = 'request-type-badge';
 
-    const quantitySpan = document.createElement('span');
-    quantitySpan.className = 'request-quantity px-2';
+	const tipoRichiesta = data.type_name || '';
 
-    // *** MODIFICA: Logica avanzata per visualizzazione quantità ***
-    const quantityText = extractQuantityFromMoorea(data); // Restituisce es. "3g" o "5h"
+	if (tipoRichiesta === 'Ferie' || typeValue === 1) {
+		typeBadge.classList.add('badge-ferie');
+	} else if (tipoRichiesta === 'Permessi' || typeValue === 2) {
+		typeBadge.classList.add('badge-permessi');
+	}
+	typeBadge.textContent = tipoRichiesta || '';
 
-    if (quantityText && quantityText.length > 0) {
-        // Estrai l'ultimo carattere per capire l'unità (g o h)
-        const unitChar = quantityText.slice(-1).toLowerCase();
-        // Estrai la parte numerica
-        const numberVal = quantityText.slice(0, -1);
-        const numericValue = parseFloat(numberVal);
+	typeWrapper.appendChild(typeBadge);
 
-        let label = '';
-        if (unitChar === 'g') {
-            label = (numberVal === '1') ? 'giorno' : 'giorni';
-            quantitySpan.innerHTML = `
+	// --- 2.2 Quantità (Wrapper min-width: 40px) ---
+	const quantityWrapper = document.createElement('div');
+	quantityWrapper.className = 'rd-wrapper-quantity mb-2';
+
+	const quantitySpan = document.createElement('span');
+	quantitySpan.className = 'request-quantity px-2';
+
+	// *** MODIFICA: Logica avanzata per visualizzazione quantità ***
+	const quantityText = extractQuantityFromMoorea(data); // Restituisce es. "3g" o "5h" o "2.5h"
+
+	if (quantityText && quantityText.length > 0) {
+		// Estrai l'ultimo carattere per capire l'unità (g o h)
+		const unitChar = quantityText.slice(-1).toLowerCase();
+		// Estrai la parte numerica
+		const numberVal = quantityText.slice(0, -1);
+		const numericValue = parseFloat(numberVal);
+
+		let label = '';
+		if (unitChar === 'g') {
+			// GIORNI: comportamento invariato
+			label = (numberVal === '1') ? 'giorno' : 'giorni';
+			quantitySpan.innerHTML = `
                 <span class="qty-number">${numberVal}</span>
                 <span class="qty-label pt-1">${label}</span>
             `;
-        } else if (unitChar === 'h') {
-            label = (numberVal === '1') ? 'ora' : 'ore';
-            const isInteger = Number.isInteger(numericValue);
-
-            if (isInteger) {
-                quantitySpan.innerHTML = `
+		} else if (unitChar === 'h') {
+			// ORE: gestione speciale per valori non interi
+			label = (numberVal === '1') ? 'ora' : 'ore';
+			
+			// Verifica se il valore è intero o ha decimali
+			const isInteger = Number.isInteger(numericValue);
+			
+			if (isInteger) {
+				// ORE INTERE: comportamento come prima
+				quantitySpan.innerHTML = `
                     <span class="qty-number">${numberVal}</span>
-                    <span class="qty-label">${label}</span>
+                    <span class="qty-label pt-1">${label}</span>
                 `;
-            } else {
-                // ORE NON INTERE (es. 2.5, 4.5): mostra "2 h 30 min" sulla stessa riga, "ORE" centrato sotto
-                const hoursInt = Math.floor(numericValue);
-                quantitySpan.innerHTML = `
+			} else {
+				// ORE NON INTERE (es. 2.5, 4.5): mostra "2 30 min" sulla stessa riga, "ORE" centrato sotto
+				const hoursInt = Math.floor(numericValue);
+				quantitySpan.innerHTML = `
                     <span class="qty-columns-wrapper">
                         <span class="qty-row-top">
                             <span class="qty-number">${hoursInt}</span>
-                            <span class="qty-hours-h pe-1">h</span>
+							<span class="qty-hours-h pe-1">h</span>
                             <span class="qty-minutes-number">30</span>
                             <span class="qty-minutes-label">min</span>
                         </span>
                         <span class="qty-row-bottom">
-                            <span class="qty-label">ORE</span>
+                            <span class="qty-label pt-1">ORE</span>
                         </span>
                     </span>
                 `;
-            }
-        } else {
-            quantitySpan.textContent = quantityText;
-        }
-    } else {
-        quantitySpan.textContent = '';
-    }
+			}
+		} else {
+			// Fallback per formati non standard
+			quantitySpan.textContent = quantityText;
+		}
+	} else {
+		quantitySpan.textContent = '';
+	}
 
-    quantityWrapper.appendChild(quantitySpan);
+	quantityWrapper.appendChild(quantitySpan);
 
-    // --- 2.3 Data e Ora (Wrapper min-width: 165px) ---
-    const datetimeWrapper = document.createElement('div');
-    datetimeWrapper.className = 'rd-wrapper-datetime ms-4'; // CSS include position: relative
+	// --- 2.3 Data e Ora (Wrapper min-width: 200px) ---
+	const datetimeWrapper = document.createElement('div');
+	datetimeWrapper.className = 'rd-wrapper-datetime'; // CSS include position: relative
 
-    // *** MODIFICA: Nuova logica per formattazione date (Ferie singola riga, Permessi invariati) ***
-    const dateInfo = extractDateInfoFromMoorea(data);
-    
-    const textContainer = document.createElement('div');
-    textContainer.style.display = 'flex';
-    textContainer.style.flexDirection = 'column';
-    textContainer.style.alignItems = 'flex-start';
+	// *** MODIFICA: Nuova logica per formattazione date (Ferie singola riga, Permessi invariati) ***
+	const dateInfo = extractDateInfoFromMoorea(data);
+	const isPermesso = typeValue === 2 || data.type_name === 'Permessi';
+	
+	const textContainer = document.createElement('div');
+	textContainer.style.display = 'flex';
+	textContainer.style.flexDirection = 'column';
+	textContainer.style.alignItems = 'flex-start';
 
-    if (!isPermesso) {
-        // --- FERIE: Solo una riga "Da X a Y", testo normale ---
-        
-        let start = '', end = '';
-        if (data.dataInizio) {
-            start = formatDateDDMMYY(data.dataInizio);
-            end = data.dataFine ? formatDateDDMMYY(data.dataFine) : start;
-        } 
-        else if (data.moorea_obj && data.moorea_obj.leaves && data.moorea_obj.leaves.length > 0) {
-            const leaves = data.moorea_obj.leaves;
-            const sortedLeaves = [...leaves].sort((a, b) => new Date(a.dataInizio) - new Date(b.dataInizio));
-            start = formatDateDDMMYY(sortedLeaves[0].dataInizio);
-            end = formatDateDDMMYY(sortedLeaves[sortedLeaves.length - 1].dataFine || sortedLeaves[sortedLeaves.length - 1].dataInizio);
-        }
+	if (!isPermesso) {
+		// --- FERIE: Solo una riga "Da X a Y", testo normale ---
+		
+		let start = '', end = '';
+		if (data.dataInizio) {
+			start = formatDateDDMMYY(data.dataInizio);
+			end = data.dataFine ? formatDateDDMMYY(data.dataFine) : start;
+		} 
+		else if (data.moorea_obj && data.moorea_obj.leaves && data.moorea_obj.leaves.length > 0) {
+			const leaves = data.moorea_obj.leaves;
+			const sortedLeaves = [...leaves].sort((a, b) => new Date(a.dataInizio) - new Date(b.dataInizio));
+			start = formatDateDDMMYY(sortedLeaves[0].dataInizio);
+			end = formatDateDDMMYY(sortedLeaves[sortedLeaves.length - 1].dataFine || sortedLeaves[sortedLeaves.length - 1].dataInizio);
+		}
 
-        if (start) {
-            let htmlText;
-            if (start === end) {
-                htmlText = `Il ${start}`;
-            } else {
-                htmlText = `<span class="date-preposition">Da</span> ${start} <span class="date-preposition">a</span> ${end}`;
-            }
-            
-            const simpleSpan = document.createElement('span');
-            simpleSpan.className = 'date-range-normal';
-            simpleSpan.innerHTML = htmlText;
-            textContainer.appendChild(simpleSpan);
-        }
-        
-    } else {
-        // --- PERMESSO: Data estesa + orari (Invariato) ---
-        
-        let formattedDate = '';
-        if (data.dataInizio) {
-            formattedDate = formatDayDDMMYY(data.dataInizio);
-        } else if (data.moorea_obj && data.moorea_obj.leaves && data.moorea_obj.leaves.length > 0) {
-            formattedDate = formatDayDDMMYY(data.moorea_obj.leaves[0].dataInizio);
-        } else {
-            formattedDate = dateInfo.dateText; 
-        }
+		if (start) {
+			let htmlText;
+			if (start === end) {
+				htmlText = `Il ${start}`;
+			} else {
+				htmlText = `<span class="date-preposition">Da</span> ${start} <span class="date-preposition">a</span> ${end}`;
+			}
+			
+			const simpleSpan = document.createElement('span');
+			simpleSpan.className = 'date-range-normal'; // CSS per testo normale
+			simpleSpan.innerHTML = htmlText;
+			textContainer.appendChild(simpleSpan);
+		}
+		
+		// NOTA: riga request-datetime rimossa per le Ferie come richiesto
 
-        const span = document.createElement('span');
-        span.className = 'request-datetime';
+	} else {
+		// --- PERMESSO: Data estesa + orari (Invariato) ---
+		
+		let formattedDate = '';
+		if (data.dataInizio) {
+			formattedDate = formatDayDDMMYY(data.dataInizio);
+		} else if (data.moorea_obj && data.moorea_obj.leaves && data.moorea_obj.leaves.length > 0) {
+			formattedDate = formatDayDDMMYY(data.moorea_obj.leaves[0].dataInizio);
+		} else {
+			formattedDate = dateInfo.dateText; 
+		}
 
-        if (dateInfo.timeText) {
-            span.innerHTML = `${formattedDate} <span class="datetime-separator">|</span> <span class="datetime-time">${dateInfo.timeText}</span>`;
-        } else {
-            span.textContent = formattedDate;
-        }
-        textContainer.appendChild(span);
-    }
+		const span = document.createElement('span');
+		span.className = 'request-datetime';
 
-    datetimeWrapper.appendChild(textContainer);
+		if (dateInfo.timeText) {
+			span.innerHTML = `${formattedDate} <span class="datetime-separator">|</span> <span class="datetime-time">${dateInfo.timeText}</span>`;
+		} else {
+			span.textContent = formattedDate;
+		}
+		textContainer.appendChild(span);
+	}
 
-    // Badge In Scadenza
-    const showInScadenza = isInScadenza(data, typeValue);
-    if (showInScadenza) {
-        const scadenzaBadge = document.createElement('div');
-        scadenzaBadge.className = 'status-floating-badge badge-scadenza';
-        scadenzaBadge.textContent = 'IN SCADENZA';
-        badgeSlotCounter++;
-        scadenzaBadge.classList.add('badge-slot-' + badgeSlotCounter);
-        datetimeWrapper.appendChild(scadenzaBadge);
-    }
+	datetimeWrapper.appendChild(textContainer);
 
-    // Appendere i wrapper al contenitore principale
-    requestDetails.appendChild(typeWrapper);
-    requestDetails.appendChild(quantityWrapper);
-    requestDetails.appendChild(datetimeWrapper);
+	// Appendere i wrapper al contenitore principale
+	requestDetails.appendChild(typeWrapper);
+	requestDetails.appendChild(quantityWrapper);
+	requestDetails.appendChild(datetimeWrapper);
 
-    // --- Icona Stato ---
-    const statusIcon = document.createElement('div');
-    statusIcon.className = 'approval-row-status-icon';
-    
-    // NUOVO CAMPO: status (int). 1=Approvato, 2=Rifiutato.
-    // A volte arriva 0 (In attesa/Nuovo), gestiamo anche quello.
-    if (data.status === 1) {
-        statusIcon.innerHTML = '<i class="bi bi-check-lg"></i>';
-        statusIcon.classList.add('status-approved');
-    } else if (data.status === 2) {
-        statusIcon.innerHTML = '<i class="bi bi-x-lg"></i>';
-        statusIcon.classList.add('status-rejected');
-    } else if (data.status === 0) {
-        // Opzionale: icona per "In attesa" se serve
-        statusIcon.innerHTML = '<i class="bi bi-hourglass-split"></i>';
-        statusIcon.style.color = '#f59e0b'; // Amber
-    }
+	// ---------------------------------------------------------
+	// SEZIONE 3: Icona Stato (Destra)
+	// ---------------------------------------------------------
+	const statusIcon = document.createElement('div');
+	statusIcon.className = 'approval-row-status-icon';
+	
+	// status: 1=Approvato, 2=Rifiutato
+	if (data.status === 1) {
+		statusIcon.innerHTML = '<i class="bi bi-check-lg"></i>';
+		statusIcon.classList.add('status-approved');
+	} else if (data.status === 2) {
+		statusIcon.innerHTML = '<i class="bi bi-x-lg"></i>';
+		statusIcon.classList.add('status-rejected');
+	}
 
-    row.appendChild(employeeProfile);
-    row.appendChild(requestDetails);
-    row.appendChild(statusIcon);
+	// ---------------------------------------------------------
+	// Assemblaggio Finale
+	// ---------------------------------------------------------
+	row.appendChild(employeeProfile);
+	row.appendChild(requestDetails);
+	row.appendChild(statusIcon);
 
-    row.addEventListener('click', function() {
-        if (typeof openDetailPanel === 'function') openDetailPanel(data);
-    });
+	// Click event
+	row.addEventListener('click', function (e) {
+		if (typeof openDetailPanel === 'function') {
+			openDetailPanel(data);
+		}
+	});
 
-    return row;
+	return row;
 }

@@ -1,31 +1,23 @@
 /* Stile riga approvazione */
 .approval-row {
-	display: flex;
-	flex-wrap: nowrap;
-	align-items: center;
-	padding: 8.8px 13.2px;
-
-	/* Bordi e Ombra */
-	border: none;
-	box-shadow: 1px 1px 7px #d3d3d373;
-
-	border-radius: 10px;
-	background-color: #ffffff;
-	margin-bottom: 21px;
-	transition: background-color 0.2s ease;
-	gap: 22px;
-	height: 75px;
-	cursor: pointer;
-
-	/* IMPORANTE: Definisce il contesto per i figli assoluti */
-	position: relative;
-
-	/* NUOVO: Abilita le Container Queries per questa riga */
-	container-type: inline-size;
-	container-name: approval-row-card;
-
-	/* Larghezza minima per evitare restringimento eccessivo */
-	min-width: 592px;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    padding: 8.8px 13.2px;
+    border: none;
+    box-shadow: 1px 1px 7px #d3d3d373;
+    border-radius: 10px;
+    background-color: #ffffff;
+    margin-bottom: 21px;
+    transition: background-color 0.2s ease;
+    gap: 22px;
+    cursor: pointer;
+    position: relative;
+    container-type: inline-size;
+    container-name: approval-row-card;
+    min-width: 592px;
+    overflow: hidden;
+    height: 75px;
 }
 
 .approval-row:hover {
@@ -38,8 +30,6 @@
 	align-items: center;
 	gap: 8.8px;
 	min-width: 220px;
-	overflow: hidden;
-	text-overflow: ellipsis;
 	flex-shrink: 0;
 }
 
@@ -77,6 +67,7 @@
 	display: flex;
 	gap: 4.4px;
 	flex-wrap: wrap;
+	max-width: 140px;
 }
 
 .badge-mansione,
@@ -88,8 +79,8 @@
 	font-weight: 600;
 	max-width: 73px;
 	overflow: hidden;
-	text-overflow: ellipsis;
 	white-space: nowrap;
+	text-overflow: ellipsis;
 }
 
 .badge-mansione {
@@ -112,23 +103,26 @@
 }
 
 .request-type-badge {
-	font-size: 0.75rem; /* 9.9px */
-	padding: 5px 10px;
+	font-size: 0.75rem;
+	padding: 3px 10px;
 	border-radius: 3.3px;
 	border: none;
 	font-weight: 600;
 	white-space: nowrap;
+	flex-shrink: 0;
 	width: 110px;
 	text-align: center;
 }
 
 .badge-ferie {
-	background-color: #f97316; /* orange-500 */
+	background-color: #f97316;
+	/* orange-500 */
 	color: #ffffff;
 }
 
 .badge-permessi {
-	background-color: #3b82f6; /* blue-500 */
+	background-color: #3b82f6;
+	/* blue-500 */
 	color: #ffffff;
 }
 
@@ -143,6 +137,7 @@
 	/* Riduce lo spazio tra le righe */
 	min-width: 75px;
 	/* Assicura una larghezza minima */
+	position: relative;
 }
 
 .qty-number {
@@ -153,7 +148,6 @@
 	color: #111111;
 	/* Nero intenso */
 	letter-spacing: 1px;
-	padding-bottom: 4px;
 }
 
 .qty-label {
@@ -164,60 +158,13 @@
 	/* Tutto maiuscolo */
 	color: #6e6e6e;
 	/* Grigio per meno enfasi */
+	letter-spacing: 0.8px;
 	position: absolute;
 	top: calc(100% + 4px);
 	left: 50%;
 	transform: translateX(-50%);
-	margin-top: 0;
-	letter-spacing: 0.8px;
-}
-
-/* Stile per la data Ferie (Unica riga, non grassetto) */
-.date-range-normal {
-	font-size: 1.22rem;
-	font-weight: 600;
-	color: #000000;
+	text-align: center;
 	white-space: nowrap;
-}
-
-.request-datetime {
-	font-size: 1.22rem;
-	/* Font-size minimo */
-	font-weight: 600;
-	color: #000000;
-	white-space: nowrap;
-	display: flex;
-	align-items: center;
-}
-
-.request-datetime>* {
-	font-size: 0.835rem;
-	/* Assicura che tutti i figli abbiano almeno 0.835rem */
-}
-
-.datetime-separator {
-	margin: 0 8.8px;
-	margin-bottom: 4px;
-	/* Spazio maggiore tra data e orari */
-	color: #000000;
-}
-
-.datetime-time {
-	color: #000000;
-}
-
-/* Stile per il nome del giorno (es. "Gio") nei permessi */
-.request-datetime .day-name {
-	margin-right: 6px;
-	line-height: 1;
-	font-size: 1rem;
-	font-weight: 600;
-}
-
-/* Stile per le preposizioni "Da" e "a" nelle ferie */
-.date-preposition {
-	font-size: 1rem;
-	font-weight: 600;
 }
 
 /* Caso speciale: qty-label dentro qty-row-bottom (ore non intere) */
@@ -254,59 +201,90 @@
 	position: relative;
 }
 
+.qty-column {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	text-align: center;
+}
+
+.qty-column-minutes {
+	flex-direction: row;
+	align-items: baseline;
+	gap: 4px;
+}
+
 .qty-minutes-number,
 .qty-hours-h {
 	font-size: 1.19rem;
+	/* 70% del font-size del numero (1.7rem * 0.7 = 1.19rem) */
 	font-weight: 600;
+	/* Stesso grassetto del numero principale */
 	color: #111111;
+	/* Nero come il numero */
 	letter-spacing: 1px;
 }
 
 .qty-minutes-label {
 	font-size: 0.635rem;
+	/* Stessa dimensione di qty-label */
 	font-weight: 600;
 	text-transform: lowercase;
 	color: #111111;
+	/* Nero come il numero */
 	letter-spacing: 0.8px;
 	margin-top: 0;
+	/* Nessun margine verticale quando è affiancato al numero */
 }
 
-/* Badge Status (Last Minute / Scadenza) */
-.status-floating-badge {
-	font-size: 0.5rem;
-	padding: 3px 10px;
-	border-radius: 5px;
-	color: black;
-	font-weight: 700;
-	text-transform: uppercase;
+/* Stile per la data Ferie (Unica riga, non grassetto) */
+.date-range-normal {
+	font-size: 1.22rem;
+	font-weight: 600;
+	color: #000000;
 	white-space: nowrap;
-	line-height: 1.1;
-	letter-spacing: 0.5px;
 }
 
-.badge-last-minute {
-	background-color: #f5d15d;
-	color: black;
+/* Stile per il nome del giorno (es. "Gio") nei permessi */
+.request-datetime .day-name {
+	margin-right: 6px;
+	line-height: 1;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
-.badge-scadenza {
-	background-color: firebrick;
-	color: whitesmoke;
+/* Stile per le preposizioni "Da" e "a" nelle ferie */
+.date-preposition {
+	font-size: 1rem;
+	font-weight: 600;
 }
 
-/* Last minute sotto "Ferie/Permessi" centrato */
-.rd-wrapper-type .status-floating-badge {
-	position: absolute;
-	top: calc(100% + 4px);
-	left: 50%;
-	transform: translateX(-50%);
-	margin-top: 0;
+.request-datetime {
+	font-size: 1.22rem;
+	font-weight: 600;
+	/* Font-size minimo */
+	color: #000000;
+	white-space: nowrap;
+	display: flex;
+	align-items: center;
 }
 
-/* In Scadenza alla destra della Data, centrato verticalmente */
-.rd-wrapper-datetime .status-floating-badge {
-	flex-shrink: 0;
-	margin-left: 8px;
+.request-datetime>* {
+	font-size: 1.22rem;	
+	font-weight: 600;
+	/* Assicura che tutti i figli abbiano almeno 0.835rem */
+}
+
+.datetime-separator {
+	margin: 0 8.8px;
+	/* Spazio maggiore tra data e orari */
+	color: #000000;
+	margin-bottom: 4px;
+}
+
+.datetime-time {
+	color: #000000;
 }
 
 /* Wrapper per gli elementi della riga richiesta */
@@ -333,7 +311,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
-	position: relative;
+	gap: 35px;
 	overflow: visible;
 }
 
@@ -365,6 +343,8 @@
    Usiamo @container query sulla row stessa.
 */
 @container approval-row-card (max-width: 586px) {
+
+	/* Limita la larghezza del profilo dipendente quando la riga è stretta */
 	.employee-profile {
 		min-width: 0;
 		max-width: 140px !important;
@@ -383,30 +363,16 @@
 	.employee-name {
 		font-weight: 700;
 		font-size: 0.917rem;
+		/* 12.1px */
 		color: #000000;
 		margin: 0;
 		line-height: 1.2;
+
+		/* Ellipsis */
 		max-width: 98%;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-	}
-
-	/* Rendiamo i wrapper "static" così i badge assoluti si posizionano rispetto alla .approval-row */
-	.rd-wrapper-type,
-	.rd-wrapper-datetime {
-		position: static !important;
-	}
-
-	/* Manteniamo i badge relativi per il wrapping naturale su schermi stretti */
-	.rd-wrapper-type .status-floating-badge,
-	.rd-wrapper-datetime .status-floating-badge {
-		position: relative !important;
-		left: auto !important;
-		transform: none !important;
-		right: auto !important;
-		margin-top: 0 !important;
-		top: auto !important;
 	}
 
 	/* qty-label torna relativo su schermi stretti */
@@ -425,17 +391,9 @@
 		transform: none !important;
 		margin-top: 0 !important;
 	}
-
-	/* Gestiamo l'impilamento usando le classi slot generate via JS */
-	.badge-slot-1 {
-		top: auto !important;
-	}
-
-	.badge-slot-2 {
-		top: auto !important;
-	}
 }
 
+/* Responsive adjustments generali */
 @media (max-width: 768px) {
 	.approval-row {
 		flex-wrap: wrap;

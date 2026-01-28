@@ -344,13 +344,13 @@ function generateMonthCalendar(year, month, requests, selectedRequest) {
 	calendarGrid.className = 'calendar-grid';
 
 	// Header giorni settimana
-	const weekdays = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-	weekdays.forEach(day => {
-		const dayHeader = document.createElement('div');
-		dayHeader.className = 'calendar-weekday';
-		dayHeader.textContent = day;
-		calendarGrid.appendChild(dayHeader);
-	});
+	// const weekdays = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+	// weekdays.forEach(day => {
+	// 	const dayHeader = document.createElement('div');
+	// 	dayHeader.className = 'calendar-weekday';
+	// 	dayHeader.textContent = day;
+	// 	calendarGrid.appendChild(dayHeader);
+	// });
 
 	// Calcola il primo giorno del mese e quanti giorni ci sono
 	const firstDay = new Date(year, month, 1);

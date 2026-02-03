@@ -1,0 +1,8 @@
+---
+alwaysApply: true
+---
+
+Controllo delle modifiche
+
+Non modificare strutture, logiche o pattern esistenti se non esplicitamente richiesto.
+In caso di miglioramenti potenziali, proponili separatamente come suggerimenti, senza applicarli automaticamente.

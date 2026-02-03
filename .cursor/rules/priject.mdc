@@ -29,4 +29,8 @@ Vincoli:
 
 ❌ niente mount / unmount
 
+❌ niente codice duplicato o ridondante
+
+❌ no overengineering
+
 ✅ HTML + CSS + JS puri

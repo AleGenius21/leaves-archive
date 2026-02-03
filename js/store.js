@@ -104,28 +104,29 @@ const leavesArchiveTemplate = `
 // STORE CENTRALE con Closure
 // ============================================================================
 function hrStore() {
-    // Stato privato in closure
+    const api = createApi();
     const state = {
-            selectedPeriod: null,
-            allRequestsData: [],
-            filteredRequestsData: [],
-            allCalendarData: [],
-            calendarInitialized: false,
-            root: null,
-            detailPanelElement: null,
-            listSectionElement: null,
-            currentRequestData: null,
-            selectedDay: null,
-            selectedPeriodStart: null,
-            selectedPeriodEnd: null,
-            filterOptionsData: [],
-            filterBarLoaded: false,
-            searchDebounceTimer: null,
-            isInitialized: false,
-            displayedCalendarYear: new Date().getFullYear(),
-            displayedCalendarYearEnd: null,
-            yearPickerWindowStart: null,
-            calendarScrollInitialized: false,
+        api: api,
+        selectedPeriod: null,
+        allRequestsData: [],
+        filteredRequestsData: [],
+        allCalendarData: [],
+        calendarInitialized: false,
+        root: null,
+        detailPanelElement: null,
+        listSectionElement: null,
+        currentRequestData: null,
+        selectedDay: null,
+        selectedPeriodStart: null,
+        selectedPeriodEnd: null,
+        filterOptionsData: [],
+        filterBarLoaded: false,
+        searchDebounceTimer: null,
+        isInitialized: false,
+        displayedCalendarYear: new Date().getFullYear(),
+        displayedCalendarYearEnd: null,
+        yearPickerWindowStart: null,
+        calendarScrollInitialized: false,
         defaultDateApplied: false
     };
 
@@ -145,7 +146,8 @@ function hrStore() {
             });
         },
         resetState: function() {
-            Object.keys(state).forEach(key => {
+            Object.keys(state).forEach(function(key) {
+                if (key === 'api') { return; }
                 if (key === 'root') {
                     state[key] = null;
                 } else if (Array.isArray(state[key])) {
@@ -159,11 +161,4 @@ function hrStore() {
         },
         template: leavesArchiveTemplate
     };
-}
-
-// ============================================================================
-// FUNZIONE DI INIZIALIZZAZIONE STORE
-// ============================================================================
-function initStore() {
-    window.hrStore = hrStore;
 }

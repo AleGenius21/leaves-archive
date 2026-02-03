@@ -30,11 +30,18 @@
 
             function initWidget() {
                 const container = document.getElementById('widget-container');
-                if (container && typeof initStore === 'function' && typeof initLeavesArchive === 'function') {
-                    initStore();
-                    initLeavesArchive(container);
+                if (container && typeof initLeavesArchive === 'function' && typeof initFilters === 'function') {
+                    const store = initLeavesArchive(container);
+
+                    // Inizializzazione componenti
+                    const detailPanel = store.getState('detailPanel');
+                    detailPanel.init(store);
+                    
+                    
+                    const filtersConfig = { endpoint: "/leave_admin_screen_config", type: 'ferie_permessi' };
+                    initFilters(store, filtersConfig);
                 } else {
-                    setTimeout(initWidget, 50);
+                    setTimeout(initWidget, 100);
                 }
             }
 
@@ -50,7 +57,9 @@
             appendScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js');
             appendScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js');
             
+            appendScript('js/api.js');
             appendScript('js/store.js');
+            appendScript('components/filters/filters.js');
             appendScript('js/main.js', function() {
                 initWidget();
             });

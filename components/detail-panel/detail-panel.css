@@ -140,6 +140,154 @@
     font-weight: 600;
 }
 
+/* Calendar year header (sticky) */
+#leaves-archive-root .calendar-year-header-wrapper {
+    position: sticky;
+    top: -13px;
+    z-index: 2;
+    background-color: #ffffff;
+    padding: 8px 0 8px 0;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#leaves-archive-root .calendar-year-label {
+    display: block;
+    font-size: 9px;
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 4px;
+}
+
+#leaves-archive-root .calendar-year-input-wrapper {
+    width: 120px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+#leaves-archive-root .calendar-year-input {
+    padding: 4px 10px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #000000;
+    background-color: #ffffff;
+    border: 1px solid #d0d0d0;
+    border-radius: 3.3px;
+    flex: 1;
+    min-width: 80px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+#leaves-archive-root .calendar-year-input:hover {
+    border-color: #a0a0a0;
+}
+
+#leaves-archive-root .calendar-year-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2.2px rgba(128, 128, 128, 0.2);
+}
+
+#leaves-archive-root .calendar-year-range-suffix {
+    font-size: 9px;
+    font-weight: 700;
+    color: #000000;
+    display: none;
+}
+
+/* Year picker dropdown: header + grid */
+#leaves-archive-root .year-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 8px;
+    max-height: 240px;
+    overflow: hidden;
+    border: 1px solid #d0d0d0;
+    border-radius: 3.3px;
+    background-color: #fafafa;
+}
+
+#leaves-archive-root .year-picker[hidden] {
+    display: none;
+}
+
+#leaves-archive-root .year-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #ffffff;
+}
+
+#leaves-archive-root .year-picker-header-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: #333333;
+}
+
+#leaves-archive-root .year-picker-nav-btn {
+    padding: 2px 8px;
+    font-size: 9px;
+    color: #333333;
+    background-color: transparent;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#leaves-archive-root .year-picker-nav-btn:hover {
+    background-color: #f5f5f5;
+}
+
+#leaves-archive-root .year-picker-nav-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(128, 128, 128, 0.2);
+}
+
+#leaves-archive-root .year-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    padding: 4px;
+    background-color: #ffffff;
+}
+
+#leaves-archive-root .year-picker-btn {
+    padding: 4px 8px;
+    font-size: 8px;
+    font-weight: 500;
+    color: #333333;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+#leaves-archive-root .year-picker-btn:hover {
+    background-color: #f5f5f5;
+    border-color: #a0a0a0;
+}
+
+#leaves-archive-root .year-picker-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(128, 128, 128, 0.2);
+}
+
+#leaves-archive-root .year-picker-btn.selected {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #000000;
+    font-weight: 600;
+}
+
 /* Calendar Container */
 #leaves-archive-root .calendar-container {
     display: flex;

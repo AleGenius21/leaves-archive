@@ -1,8 +1,3 @@
-/**
- * Leaves Archive Widget - Rifattorizzato con IIFE e Store Centrale
- * Tutto il codice è incapsulato in una IIFE senza variabili globali
- */
-
 (function() {
     'use strict';
 
@@ -89,6 +84,15 @@
                                 <button type="button" class="preset-btn" data-preset="next-15-days">Prossimi 15 giorni</button>
                                 <button type="button" class="preset-btn" data-preset="next-month">Prossimo mese</button>
                             </div>
+                            <div class="calendar-year-header-wrapper">
+                                <div class="calendar-year-input-wrapper" aria-expanded="false">
+                                    <input type="text" id="calendarYearInput" class="calendar-year-input" inputmode="numeric" pattern="[0-9\\s\\-]*" aria-label="Anno" aria-haspopup="dialog" aria-controls="yearPicker" />
+                                    <span class="calendar-year-range-suffix" id="calendarYearRangeSuffix" aria-hidden="true"></span>
+                                </div>
+                                <div class="year-picker" id="yearPicker" role="dialog" aria-label="Scegli anno" hidden>
+                                    <!-- Header e griglia anni generati da JS -->
+                                </div>
+                            </div>
                             <div class="calendar-container" id="calendarContainer"></div>
                         </div>
                     </div>
@@ -118,7 +122,12 @@
             filterOptionsData: [],
             filterBarLoaded: false,
             searchDebounceTimer: null,
-            isInitialized: false
+            isInitialized: false,
+            displayedCalendarYear: new Date().getFullYear(),
+            displayedCalendarYearEnd: null,
+            yearPickerWindowStart: null,
+            calendarScrollInitialized: false,
+            defaultDateApplied: false
         };
 
         return {
@@ -973,43 +982,17 @@
                 });
             });
 
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth();
-            const startYear = 2024;
-            const startMonth = 0;
-            const totalMonths = (currentYear - startYear) * 12 + currentMonth + 12;
+            // Anni da mostrare: due anni se periodo a cavallo (displayedCalendarYearEnd), altrimenti uno
+            const displayedYear = store.getState('displayedCalendarYear');
+            const displayedYearEnd = store.getState('displayedCalendarYearEnd');
+            const yearsToDisplay = displayedYearEnd != null
+                ? [Math.min(displayedYear, displayedYearEnd), Math.max(displayedYear, displayedYearEnd)]
+                : [displayedYear];
 
-            for (let i = 0; i < totalMonths; i++) {
-                const month = startMonth + i;
-                const actualYear = startYear + Math.floor(month / 12);
-                const actualMonth = month % 12;
-                const monthKey = `${actualYear}-${actualMonth}`;
-
-                if (!monthsMap.has(monthKey)) {
-                    monthsMap.set(monthKey, {
-                        year: actualYear,
-                        month: actualMonth,
-                        requests: []
-                    });
-                }
-            }
-
-            const selectedPeriodStart = store.getState('selectedPeriodStart');
-            const selectedPeriodEnd = store.getState('selectedPeriodEnd');
-            
-            if (selectedPeriodStart && selectedPeriodEnd) {
-                const startDate = new Date(selectedPeriodStart);
-                const endDate = new Date(selectedPeriodEnd);
-                startDate.setHours(0, 0, 0, 0);
-                endDate.setHours(0, 0, 0, 0);
-
-                const currentDate = new Date(startDate);
-                while (currentDate <= endDate) {
-                    const year = currentDate.getFullYear();
-                    const month = currentDate.getMonth();
+            // Popola monthsMap con i 12 mesi per ogni anno da mostrare
+            yearsToDisplay.forEach(year => {
+                for (let month = 0; month < 12; month++) {
                     const monthKey = `${year}-${month}`;
-
                     if (!monthsMap.has(monthKey)) {
                         monthsMap.set(monthKey, {
                             year: year,
@@ -1017,18 +1000,48 @@
                             requests: []
                         });
                     }
+                }
+            });
 
+            // Se c'è un periodo selezionato, assicurati che i suoi mesi negli anni visualizzati siano inclusi
+            const selectedPeriod = store.getState('selectedPeriod');
+            if (selectedPeriod && selectedPeriod.startDate && selectedPeriod.endDate) {
+                const startDate = new Date(selectedPeriod.startDate);
+                const endDate = new Date(selectedPeriod.endDate);
+                startDate.setHours(0, 0, 0, 0);
+                endDate.setHours(0, 0, 0, 0);
+
+                const currentDate = new Date(startDate);
+                while (currentDate <= endDate) {
+                    const year = currentDate.getFullYear();
+                    const month = currentDate.getMonth();
+                    if (!yearsToDisplay.includes(year)) {
+                        currentDate.setMonth(currentDate.getMonth() + 1);
+                        currentDate.setDate(1);
+                        continue;
+                    }
+                    const monthKey = `${year}-${month}`;
+                    if (!monthsMap.has(monthKey)) {
+                        monthsMap.set(monthKey, {
+                            year: year,
+                            month: month,
+                            requests: []
+                        });
+                    }
                     currentDate.setMonth(currentDate.getMonth() + 1);
                     currentDate.setDate(1);
                 }
             }
 
-            const sortedMonths = Array.from(monthsMap.values()).sort((a, b) => {
-                if (a.year !== b.year) {
-                    return a.year - b.year;
-                }
-                return a.month - b.month;
-            });
+            // Mesi degli anni visualizzati, ordinati cronologicamente (12 o 24 mesi)
+            const sortedMonths = Array.from(monthsMap.values())
+                .filter(m => yearsToDisplay.includes(m.year))
+                .sort((a, b) => {
+                    if (a.year !== b.year) {
+                        return a.year - b.year;
+                    }
+                    return a.month - b.month;
+                });
 
             const currentRequestData = store.getState('currentRequestData');
             sortedMonths.forEach(monthData => {
@@ -1036,12 +1049,16 @@
                 calendarContainer.appendChild(monthCalendar);
             });
 
-            if (!store.getState('calendarInitialized')) {
-                store.setState('calendarInitialized', true);
+            // Scrolla automaticamente al mese corrente (solo al primo rendering, se l'anno corrente è tra quelli visualizzati)
+            const today = new Date();
+            if (!store.getState('calendarScrollInitialized') && yearsToDisplay.includes(today.getFullYear())) {
+                store.setState('calendarScrollInitialized', true);
                 setTimeout(() => {
                     scrollToDate(store, today, true);
                 }, 100);
             }
+
+            updateCalendarYearInput(store);
         }
 
         function generateMonthCalendar(store, year, month, requests, selectedRequest) {
@@ -1236,48 +1253,64 @@
         }
 
         async function handleDayClick(store, year, month, day) {
+            clearPresetActiveState(store);
+
+            const root = store.getState('root');
+            const previousSelected = root ? root.querySelectorAll('.calendar-day.selected-day') : [];
+            previousSelected.forEach(e => e.classList.remove('selected-day'));
+
             const selectedDate = new Date(year, month, day);
             selectedDate.setHours(0, 0, 0, 0);
 
-            const selectedPeriodStart = store.getState('selectedPeriodStart');
-            const selectedPeriodEnd = store.getState('selectedPeriodEnd');
+            const period = store.getState('selectedPeriod');
+            const periodStart = period?.startDate;
+            const periodEnd = period?.endDate;
+            
+            // Distingue "solo inizio" (start === end, 1 giorno) da "range già scelto" (start !== end)
+            const isRangeAlreadySet = periodStart && periodEnd &&
+                new Date(periodStart).getTime() !== new Date(periodEnd).getTime();
 
-            if (!selectedPeriodStart) {
-                store.setState('selectedPeriodStart', new Date(selectedDate));
+            if (!periodStart) {
+                // 1° click: imposta inizio periodo (e fine = inizio per coerenza store)
+                const start = new Date(selectedDate);
+                store.setState('selectedPeriod', {
+                    startDate: start,
+                    endDate: new Date(start)
+                });
+                store.setState('selectedPeriodStart', new Date(start));
                 store.setState('selectedPeriodEnd', null);
-                const selectedPeriod = store.getState('selectedPeriod');
-                if (selectedPeriod) {
-                    store.setState('selectedPeriod', {
-                        startDate: new Date(selectedDate),
-                        endDate: new Date(selectedDate)
-                    });
+            } else if (!isRangeAlreadySet) {
+                // 2° click: imposta fine periodo (può essere stesso giorno)
+                let startDate = new Date(periodStart);
+                let endDate = new Date(selectedDate);
+                if (endDate < startDate) {
+                    [startDate, endDate] = [endDate, startDate];
                 }
-            } else if (!selectedPeriodEnd) {
-                let newEnd = new Date(selectedDate);
-                let newStart = new Date(selectedPeriodStart);
-                if (newEnd < newStart) {
-                    const temp = newStart;
-                    newStart = newEnd;
-                    newEnd = temp;
-                }
-                store.setState('selectedPeriodStart', newStart);
-                store.setState('selectedPeriodEnd', newEnd);
-                await applyPeriodFilter(store, newStart, newEnd);
+                await applyPeriodFilter(store, startDate, endDate);
             } else {
-                store.setState('selectedPeriodStart', new Date(selectedDate));
+                // 3° click: reset e nuovo inizio
+                const start = new Date(selectedDate);
+                store.setState('selectedPeriod', {
+                    startDate: start,
+                    endDate: new Date(start)
+                });
+                store.setState('selectedPeriodStart', new Date(start));
                 store.setState('selectedPeriodEnd', null);
-                clearPeriodSelection(store);
+                store.setState('displayedCalendarYear', selectedDate.getFullYear());
+                store.setState('displayedCalendarYearEnd', null);
             }
 
             renderCalendar(store);
 
-            const currentSelectedPeriodEnd = store.getState('selectedPeriodEnd');
-            if (!currentSelectedPeriodEnd) {
+            // Chiama loadAndDisplayDayData solo per selezione singola (stesso giorno inizio/fine), non per range
+            const periodAfter = store.getState('selectedPeriod');
+            const isSingleDay = periodAfter?.startDate && periodAfter?.endDate &&
+                new Date(periodAfter.startDate).getTime() === new Date(periodAfter.endDate).getTime();
+            
+            if (isSingleDay) {
                 store.setState('selectedDay', { year, month, day });
-
-                const root = store.getState('root');
-                const previousSelected = root.querySelectorAll('.calendar-day.selected-day');
-                previousSelected.forEach(el => el.classList.remove('selected-day'));
+                const previousSelected2 = root ? root.querySelectorAll('.calendar-day.selected-day') : [];
+                previousSelected2.forEach(e => e.classList.remove('selected-day'));
 
                 const loadAndDisplayDayData = store.getState('loadAndDisplayDayData');
                 if (loadAndDisplayDayData) {
@@ -1292,6 +1325,17 @@
             const normalizedEnd = new Date(endDate);
             normalizedEnd.setHours(23, 59, 59, 999);
 
+            const startYear = normalizedStart.getFullYear();
+            const endYear = normalizedEnd.getFullYear();
+            
+            if (startYear !== endYear) {
+                store.setState('displayedCalendarYear', startYear);
+                store.setState('displayedCalendarYearEnd', endYear);
+            } else {
+                store.setState('displayedCalendarYear', startYear);
+                store.setState('displayedCalendarYearEnd', null);
+            }
+
             store.setState('selectedPeriodStart', normalizedStart);
             store.setState('selectedPeriodEnd', normalizedEnd);
             store.setState('selectedPeriod', {
@@ -1305,6 +1349,7 @@
             }
 
             renderCalendar(store);
+            updateCalendarYearInput(store);
 
             const hideFilterSpinner = store.getState('hideFilterSpinner');
             if (hideFilterSpinner) {
@@ -1384,10 +1429,28 @@
             }
         }
 
+        function clearPresetActiveState(store) {
+            const root = store.getState('root');
+            if (root) {
+                root.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            }
+        }
+
+        function applyDefaultTodaySelection(store) {
+            if (store.getState('defaultDateApplied')) return;
+            store.setState('defaultDateApplied', true);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            applyPeriodFilter(store, today, today);
+        }
+
         function clearPeriodSelection(store) {
             store.setState('selectedPeriodStart', null);
             store.setState('selectedPeriodEnd', null);
             store.setState('selectedPeriod', null);
+            store.setState('displayedCalendarYearEnd', null);
+            store.setState('displayedCalendarYear', new Date().getFullYear());
 
             const root = store.getState('root');
             const periodDays = root ? root.querySelectorAll('.calendar-day.period-start, .calendar-day.period-end, .calendar-day.period-range') : [];
@@ -1413,6 +1476,7 @@
                 handleFilterChange(store);
             }
 
+            updateCalendarYearInput(store);
             renderCalendar(store);
         }
 
@@ -1465,6 +1529,18 @@
 
             startDate.setHours(0, 0, 0, 0);
             endDate.setHours(23, 59, 59, 999);
+
+            // Mostra uno o due anni nel calendario a seconda che il periodo sia a cavallo
+            const startYear = startDate.getFullYear();
+            const endYear = endDate.getFullYear();
+            if (startYear !== endYear) {
+                store.setState('displayedCalendarYear', startYear);
+                store.setState('displayedCalendarYearEnd', endYear);
+            } else {
+                store.setState('displayedCalendarYear', startYear);
+                store.setState('displayedCalendarYearEnd', null);
+            }
+            updateCalendarYearInput(store);
 
             await applyPeriodFilter(store, startDate, endDate);
 
@@ -1523,6 +1599,225 @@
             });
         }
 
+        const YEAR_PICKER_MIN = 2024;
+        const YEAR_PICKER_WINDOW_SIZE = 12;
+
+        function getYearPickerMax() {
+            return new Date().getFullYear() + 1;
+        }
+
+        function updateCalendarYearInput(store) {
+            const root = store.getState('root');
+            if (!root) return;
+            
+            const input = root.querySelector('#calendarYearInput');
+            const suffix = root.querySelector('#calendarYearRangeSuffix');
+            if (!input) return;
+            
+            const displayedYear = store.getState('displayedCalendarYear');
+            const displayedYearEnd = store.getState('displayedCalendarYearEnd');
+            
+            if (displayedYearEnd != null) {
+                input.value = displayedYear + ' - ' + displayedYearEnd;
+            } else {
+                input.value = String(displayedYear);
+            }
+            
+            if (suffix) {
+                suffix.textContent = '';
+                suffix.style.display = 'none';
+            }
+        }
+
+        function closeYearPicker(store) {
+            const root = store.getState('root');
+            if (!root) return;
+            
+            const yearPicker = root.querySelector('#yearPicker');
+            const wrapper = root.querySelector('.calendar-year-input-wrapper');
+            
+            if (yearPicker) yearPicker.hidden = true;
+            if (wrapper) wrapper.setAttribute('aria-expanded', 'false');
+        }
+
+        function populateYearPicker(store) {
+            const root = store.getState('root');
+            if (!root) return;
+            
+            const yearPicker = root.querySelector('#yearPicker');
+            if (!yearPicker) return;
+
+            const maxStartYear = Math.max(YEAR_PICKER_MIN, getYearPickerMax() - YEAR_PICKER_WINDOW_SIZE + 1);
+            let windowStart = store.getState('yearPickerWindowStart');
+            const displayedYear = store.getState('displayedCalendarYear');
+            
+            if (windowStart == null) {
+                windowStart = Math.max(YEAR_PICKER_MIN, displayedYear - 5);
+                windowStart = Math.min(windowStart, maxStartYear);
+                store.setState('yearPickerWindowStart', windowStart);
+            }
+            
+            const startYear = windowStart;
+            const endYear = Math.min(startYear + YEAR_PICKER_WINDOW_SIZE - 1, getYearPickerMax());
+
+            yearPicker.innerHTML = '';
+
+            // Header: prev, label range, next
+            const header = document.createElement('div');
+            header.className = 'year-picker-header';
+            
+            const btnPrev = document.createElement('button');
+            btnPrev.type = 'button';
+            btnPrev.className = 'year-picker-nav-btn';
+            btnPrev.setAttribute('aria-label', 'Anni precedenti');
+            btnPrev.textContent = '\u2039';
+            
+            const labelCenter = document.createElement('span');
+            labelCenter.className = 'year-picker-header-label';
+            labelCenter.textContent = startYear === endYear ? String(startYear) : startYear + ' – ' + endYear;
+            
+            const btnNext = document.createElement('button');
+            btnNext.type = 'button';
+            btnNext.className = 'year-picker-nav-btn';
+            btnNext.setAttribute('aria-label', 'Anni successivi');
+            btnNext.textContent = '\u203A';
+
+            btnPrev.onclick = function(e) {
+                e.stopPropagation();
+                store.setState('yearPickerWindowStart', Math.max(YEAR_PICKER_MIN, startYear - YEAR_PICKER_WINDOW_SIZE));
+                populateYearPicker(store);
+            };
+            
+            btnNext.onclick = function(e) {
+                e.stopPropagation();
+                store.setState('yearPickerWindowStart', Math.min(startYear + YEAR_PICKER_WINDOW_SIZE, maxStartYear));
+                populateYearPicker(store);
+            };
+
+            header.appendChild(btnPrev);
+            header.appendChild(labelCenter);
+            header.appendChild(btnNext);
+            yearPicker.appendChild(header);
+
+            // Griglia 4x3
+            const grid = document.createElement('div');
+            grid.className = 'year-picker-grid';
+            
+            for (let y = startYear; y <= endYear; y++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                const isSelected = y === displayedYear;
+                btn.className = 'year-picker-btn' + (isSelected ? ' selected' : '');
+                btn.textContent = y;
+                btn.setAttribute('data-year', y);
+                if (isSelected) btn.setAttribute('aria-pressed', 'true');
+                
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    const year = parseInt(this.getAttribute('data-year'), 10);
+                    store.setState('displayedCalendarYear', year);
+                    store.setState('displayedCalendarYearEnd', null);
+                    closeYearPicker(store);
+                    updateCalendarYearInput(store);
+                    renderCalendar(store);
+                    setTimeout(() => {
+                        scrollToDate(store, new Date(year, 0, 1), true);
+                    }, 50);
+                };
+                
+                grid.appendChild(btn);
+            }
+            
+            yearPicker.appendChild(grid);
+        }
+
+        function setupYearPicker(store) {
+            const root = store.getState('root');
+            if (!root) return;
+            
+            const yearInput = root.querySelector('#calendarYearInput');
+            const yearPicker = root.querySelector('#yearPicker');
+            const wrapper = root.querySelector('.calendar-year-input-wrapper');
+            
+            if (!yearInput || !yearPicker) return;
+
+            populateYearPicker(store);
+
+            function openPicker() {
+                store.setState('yearPickerWindowStart', null);
+                populateYearPicker(store);
+                yearPicker.hidden = false;
+                if (wrapper) wrapper.setAttribute('aria-expanded', 'true');
+            }
+
+            yearInput.onfocus = function(e) {
+                e.stopPropagation();
+                openPicker();
+            };
+            
+            yearInput.onclick = function(e) {
+                e.stopPropagation();
+                if (yearPicker.hidden) openPicker();
+            };
+
+            function parseYearInputValue(str) {
+                const s = String(str).trim();
+                const single = /^\s*(\d{4})\s*$/;
+                const range = /^\s*(\d{4})\s*-\s*(\d{4})\s*$/;
+                let m = s.match(range);
+                
+                if (m) {
+                    const a = parseInt(m[1], 10);
+                    const b = parseInt(m[2], 10);
+                    const max = getYearPickerMax();
+                    if (a >= YEAR_PICKER_MIN && a <= max && b >= YEAR_PICKER_MIN && b <= max)
+                        return { single: false, start: Math.min(a, b), end: Math.max(a, b) };
+                }
+                
+                m = s.match(single);
+                if (m) {
+                    const val = parseInt(m[1], 10);
+                    if (val >= YEAR_PICKER_MIN && val <= getYearPickerMax())
+                        return { single: true, start: val, end: null };
+                }
+                
+                return null;
+            }
+
+            yearInput.onchange = function() {
+                const parsed = parseYearInputValue(yearInput.value);
+                if (parsed) {
+                    store.setState('displayedCalendarYear', parsed.start);
+                    store.setState('displayedCalendarYearEnd', parsed.single ? null : parsed.end);
+                    updateCalendarYearInput(store);
+                    renderCalendar(store);
+                    const year = store.getState('displayedCalendarYear');
+                    setTimeout(() => scrollToDate(store, new Date(year, 0, 1), true), 50);
+                } else {
+                    updateCalendarYearInput(store);
+                }
+            };
+            
+            yearInput.onblur = function() {
+                const parsed = parseYearInputValue(yearInput.value);
+                if (!parsed) {
+                    updateCalendarYearInput(store);
+                }
+            };
+
+            // Click outside handler - usa setTimeout per evitare conflitti con altri handler
+            setTimeout(function() {
+                document.addEventListener('click', function closeOnOutsideClick(e) {
+                    if (yearPicker.hidden) return;
+                    if (!yearPicker.contains(e.target) && e.target !== yearInput && (!wrapper || !wrapper.contains(e.target))) {
+                        closeYearPicker(store);
+                    }
+                });
+            }, 0);
+
+            updateCalendarYearInput(store);
+        }
+
         async function init(store) {
             const root = store.getState('root');
             if (!root) {
@@ -1548,9 +1843,14 @@
                 detailPanelElement.classList.add('panel-open');
                 listSectionElement.classList.add('panel-open');
 
+                // Setup year picker
+                setupYearPicker(store);
+
                 // Renderizza il calendario 
                 renderCalendar(store);
                 
+                // Applica selezione "oggi" di default al primo caricamento
+                applyDefaultTodaySelection(store);
             });
         }
 

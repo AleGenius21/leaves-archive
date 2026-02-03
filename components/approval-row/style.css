@@ -1,5 +1,5 @@
 /* Stile riga approvazione */
-.approval-row {
+#leaves-archive-root .approval-row {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
@@ -20,12 +20,12 @@
     height: 75px;
 }
 
-.approval-row:hover {
+#leaves-archive-root .approval-row:hover {
 	background-color: #f5f5f5;
 }
 
 /* Sezione profilo dipendente (sinistra) */
-.employee-profile {
+#leaves-archive-root .employee-profile {
 	display: flex;
 	align-items: center;
 	gap: 8.8px;
@@ -33,7 +33,7 @@
 	flex-shrink: 0;
 }
 
-.employee-avatar {
+#leaves-archive-root .employee-avatar {
 	width: 43px;
 	height: 43px;
 	border-radius: 50%;
@@ -42,16 +42,15 @@
 	flex-shrink: 0;
 }
 
-.employee-info {
+#leaves-archive-root .employee-info {
 	display: flex;
 	flex-direction: column;
 	gap: 4.4px;
 }
 
-.employee-name {
+#leaves-archive-root .employee-name {
 	font-weight: 700;
-	font-size: 0.917rem;
-	/* 12.1px */
+	font-size: 9px;
 	color: #000000;
 	margin: 0;
 	line-height: 1.2;
@@ -63,17 +62,17 @@
 	text-overflow: ellipsis;
 }
 
-.employee-badges {
+#leaves-archive-root .employee-badges {
 	display: flex;
 	gap: 4.4px;
 	flex-wrap: wrap;
 	max-width: 140px;
 }
 
-.badge-mansione,
-.badge-reparto {
-	font-size: 0.63rem;
-	padding: 0.1rem 0.3rem 0.05rem 0.3rem;
+#leaves-archive-root .badge-mansione,
+#leaves-archive-root .badge-reparto {
+	font-size: 6px;
+	padding: 1px 3px 1px 3px;
 	border-radius: 6px;
 	border: none;
 	font-weight: 600;
@@ -83,18 +82,18 @@
 	text-overflow: ellipsis;
 }
 
-.badge-mansione {
+#leaves-archive-root .badge-mansione {
 	background-color: #F5F5F5;
 	color: #666666;
 }
 
-.badge-reparto {
+#leaves-archive-root .badge-reparto {
 	background-color: #E1E5E9;
 	color: #2c2c2c;
 }
 
 /* Sezione dettagli richiesta (centro) */
-.request-details {
+#leaves-archive-root .request-details {
 	display: flex;
 	align-items: center;
 	gap: 65px;
@@ -102,8 +101,8 @@
 	flex-wrap: nowrap;
 }
 
-.request-type-badge {
-	font-size: 0.75rem;
+#leaves-archive-root .request-type-badge {
+	font-size: 8px;
 	padding: 3px 10px;
 	border-radius: 3.3px;
 	border: none;
@@ -114,50 +113,38 @@
 	text-align: center;
 }
 
-.badge-ferie {
+#leaves-archive-root .badge-ferie {
 	background-color: #f97316;
-	/* orange-500 */
 	color: #ffffff;
 }
 
-.badge-permessi {
+#leaves-archive-root .badge-permessi {
 	background-color: #3b82f6;
-	/* blue-500 */
 	color: #ffffff;
 }
 
-.request-quantity {
+#leaves-archive-root .request-quantity {
 	display: flex;
 	flex-direction: column;
-	/* Impila verticalmente */
 	align-items: center;
-	/* Centra orizzontalmente */
 	justify-content: center;
 	line-height: 1;
-	/* Riduce lo spazio tra le righe */
 	min-width: 75px;
-	/* Assicura una larghezza minima */
 	position: relative;
 }
 
-.qty-number {
-	font-size: 1.7rem;
-	/* Dimensione grande */
+#leaves-archive-root .qty-number {
+	font-size: 17px;
 	font-weight: 600;
-	/* Molto grassetto */
 	color: #111111;
-	/* Nero intenso */
 	letter-spacing: 1px;
 }
 
-.qty-label {
-	font-size: 0.635rem;
-	/* Molto piccolo */
+#leaves-archive-root .qty-label {
+	font-size: 6px;
 	font-weight: 600;
 	text-transform: uppercase;
-	/* Tutto maiuscolo */
 	color: #6e6e6e;
-	/* Grigio per meno enfasi */
 	letter-spacing: 0.8px;
 	position: absolute;
 	top: calc(100% + 4px);
@@ -168,7 +155,7 @@
 }
 
 /* Caso speciale: qty-label dentro qty-row-bottom (ore non intere) */
-.qty-row-bottom .qty-label {
+#leaves-archive-root .qty-row-bottom .qty-label {
 	position: absolute;
 	top: calc(100% + 4px);
 	left: 50%;
@@ -176,7 +163,7 @@
 	margin-top: 0;
 }
 
-.qty-columns-wrapper {
+#leaves-archive-root .qty-columns-wrapper {
 	display: inline-flex;
 	flex-direction: column;
 	align-items: center;
@@ -184,14 +171,14 @@
 	gap: 0;
 }
 
-.qty-row-top {
+#leaves-archive-root .qty-row-top {
 	display: flex;
 	flex-direction: row;
 	align-items: baseline;
 	justify-content: center;
 }
 
-.qty-row-bottom {
+#leaves-archive-root .qty-row-bottom {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
@@ -201,7 +188,7 @@
 	position: relative;
 }
 
-.qty-column {
+#leaves-archive-root .qty-column {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -209,88 +196,79 @@
 	text-align: center;
 }
 
-.qty-column-minutes {
+#leaves-archive-root .qty-column-minutes {
 	flex-direction: row;
 	align-items: baseline;
 	gap: 4px;
 }
 
-.qty-minutes-number,
-.qty-hours-h {
-	font-size: 1.19rem;
-	/* 70% del font-size del numero (1.7rem * 0.7 = 1.19rem) */
+#leaves-archive-root .qty-minutes-number,
+#leaves-archive-root .qty-hours-h {
+	font-size: 12px;
 	font-weight: 600;
-	/* Stesso grassetto del numero principale */
 	color: #111111;
-	/* Nero come il numero */
 	letter-spacing: 1px;
 }
 
-.qty-minutes-label {
-	font-size: 0.635rem;
-	/* Stessa dimensione di qty-label */
+#leaves-archive-root .qty-minutes-label {
+	font-size: 6px;
 	font-weight: 600;
 	text-transform: lowercase;
 	color: #111111;
-	/* Nero come il numero */
 	letter-spacing: 0.8px;
 	margin-top: 0;
-	/* Nessun margine verticale quando è affiancato al numero */
 }
 
 /* Stile per la data Ferie (Unica riga, non grassetto) */
-.date-range-normal {
-	font-size: 1.22rem;
+#leaves-archive-root .date-range-normal {
+	font-size: 12px;
 	font-weight: 600;
 	color: #000000;
 	white-space: nowrap;
 }
 
 /* Stile per il nome del giorno (es. "Gio") nei permessi */
-.request-datetime .day-name {
+#leaves-archive-root .request-datetime .day-name {
 	margin-right: 6px;
 	line-height: 1;
-    font-size: 1rem;
+    font-size: 10px;
     font-weight: 600;
 }
 
 /* Stile per le preposizioni "Da" e "a" nelle ferie */
-.date-preposition {
-	font-size: 1rem;
+#leaves-archive-root .date-preposition {
+	font-size: 10px;
 	font-weight: 600;
 }
 
-.request-datetime {
-	font-size: 1.22rem;
+#leaves-archive-root .request-datetime {
+	font-size: 12px;
 	font-weight: 600;
-	/* Font-size minimo */
 	color: #000000;
 	white-space: nowrap;
 	display: flex;
 	align-items: center;
 }
 
-.request-datetime>* {
-	font-size: 1.22rem;	
+#leaves-archive-root .request-datetime>* {
+	font-size: 12px;	
 	font-weight: 600;
-	/* Assicura che tutti i figli abbiano almeno 0.835rem */
 }
 
-.datetime-separator {
+#leaves-archive-root .datetime-separator {
 	margin: 0 8.8px;
-	/* Spazio maggiore tra data e orari */
 	color: #000000;
 	margin-bottom: 4px;
 }
 
-.datetime-time {
+#leaves-archive-root .datetime-time {
 	color: #000000;
 }
 
 /* Wrapper per gli elementi della riga richiesta */
 
 /* 1. Wrapper TIPO */
-.rd-wrapper-type {
+#leaves-archive-root .rd-wrapper-type {
 	min-width: 90px;
 	display: flex;
 	align-items: center;
@@ -299,14 +277,14 @@
 	overflow: visible;
 }
 
-.rd-wrapper-quantity {
+#leaves-archive-root .rd-wrapper-quantity {
 	min-width: 45px;
 	display: flex;
 	align-items: center;
 }
 
 /* 2. Wrapper DATA */
-.rd-wrapper-datetime {
+#leaves-archive-root .rd-wrapper-datetime {
 	min-width: 165px;
 	display: flex;
 	align-items: center;
@@ -316,7 +294,7 @@
 }
 
 /* Icona stato all'estremo destro */
-.approval-row-status-icon {
+#leaves-archive-root .approval-row-status-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -325,17 +303,17 @@
 	padding-left: 13.2px;
 }
 
-.approval-row-status-icon i {
-	font-size: 1.2rem;
+#leaves-archive-root .approval-row-status-icon i {
+	font-size: 12px;
 	line-height: 1;
 }
 
-.approval-row-status-icon.status-approved i {
-	color: #22c55e; /* green-500 */
+#leaves-archive-root .approval-row-status-icon.status-approved i {
+	color: #22c55e;
 }
 
-.approval-row-status-icon.status-rejected i {
-	color: #ef4444; /* red-500 */
+#leaves-archive-root .approval-row-status-icon.status-rejected i {
+	color: #ef4444;
 }
 
 /* 
@@ -345,14 +323,14 @@
 @container approval-row-card (max-width: 586px) {
 
 	/* Limita la larghezza del profilo dipendente quando la riga è stretta */
-	.employee-profile {
+	#leaves-archive-root .employee-profile {
 		min-width: 0;
 		max-width: 140px !important;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
-	.employee-info {
+	#leaves-archive-root .employee-info {
 		display: flex;
 		flex-direction: column;
 		gap: 4.4px;
@@ -360,10 +338,9 @@
 		overflow: hidden;
 	}
 
-	.employee-name {
+	#leaves-archive-root .employee-name {
 		font-weight: 700;
-		font-size: 0.917rem;
-		/* 12.1px */
+		font-size: 9px;
 		color: #000000;
 		margin: 0;
 		line-height: 1.2;
@@ -376,7 +353,7 @@
 	}
 
 	/* qty-label torna relativo su schermi stretti */
-	.qty-label {
+	#leaves-archive-root .qty-label {
 		position: relative !important;
 		top: auto !important;
 		left: auto !important;
@@ -384,7 +361,7 @@
 		margin-top: 6px !important;
 	}
 
-	.qty-row-bottom .qty-label {
+	#leaves-archive-root .qty-row-bottom .qty-label {
 		position: relative !important;
 		top: auto !important;
 		left: auto !important;
@@ -395,17 +372,17 @@
 
 /* Responsive adjustments generali */
 @media (max-width: 768px) {
-	.approval-row {
+	#leaves-archive-root .approval-row {
 		flex-wrap: wrap;
 		padding: 6.6px 8.8px;
 	}
 
-	.employee-profile {
+	#leaves-archive-root .employee-profile {
 		min-width: 100%;
 		margin-bottom: 4.4px;
 	}
 
-	.request-details {
+	#leaves-archive-root .request-details {
 		min-width: 100%;
 		margin-bottom: 4.4px;
 	}

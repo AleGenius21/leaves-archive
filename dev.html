@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Archivio Ferie/Permessi - Dev</title>
+</head>
+<body style="margin:0;height:100vh;overflow:hidden;">
+    <!-- Container WordPress simulato (dimensioni fisse) -->
+    <div style="width:100%;height:100%;" id="widget-container"></div>
+
+    <!-- Carica CSS e JS -->
+    <script>
+        (function() {
+            function appendStylesheet(href) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = href;
+                document.head.appendChild(link);
+            }
+
+            function appendScript(src, callback) {
+                const script = document.createElement('script');
+                script.src = src;
+                if (callback) {
+                    script.onload = callback;
+                }
+                document.body.appendChild(script);
+            }
+
+            function initWidget() {
+                const container = document.getElementById('widget-container');
+                if (container && typeof window.initLeavesArchive === 'function') {
+                    window.initLeavesArchive(container);
+                } else {
+                    setTimeout(initWidget, 50);
+                }
+            }
+
+            appendStylesheet('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css');
+            appendStylesheet('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css');
+            appendStylesheet('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css');
+            appendStylesheet('css/main.css');
+            appendStylesheet('components/approval-row/style.css');
+            appendStylesheet('components/filters/filters.css');
+            appendStylesheet('components/detail-panel/detail-panel.css');
+
+            appendScript('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js');
+            appendScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js');
+            appendScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js');
+            
+            appendScript('js/main.js', function() {
+                initWidget();
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 /* --- START OF FILE detail-panel.css --- */
 
 /* Detail Panel Container */
-.detail-panel {
+#leaves-archive-root .detail-panel {
     width: 0;
     overflow: hidden;
     background-color: #ffffff;
@@ -15,14 +15,14 @@
     position: relative;
 }
 
-.detail-panel.panel-open {
+#leaves-archive-root .detail-panel.panel-open {
     width: 30%;
-    min-width: 430PX;
+    min-width: 430px;
     overflow: hidden;
 }
 
 /* Close Button */
-.btn-close-panel {
+#leaves-archive-root .btn-close-panel {
     display: none; 
     align-items: center;
     justify-content: center;
@@ -36,79 +36,75 @@
     transition: all 0.2s ease;
     color: #333333;
     position: absolute;
-    top: 8px; /* Spostato un po' più in alto */
+    top: 8px;
     right: 8px;
     z-index: 10;
 }
 
-.btn-close-panel:hover {
+#leaves-archive-root .btn-close-panel:hover {
     background-color: #f5f5f5;
     border-color: #a0a0a0;
     color: #000000;
 }
 
-.btn-close-panel:active {
+#leaves-archive-root .btn-close-panel:active {
     background-color: #e0e0e0;
 }
 
-.btn-close-panel:focus {
+#leaves-archive-root .btn-close-panel:focus {
     outline: none;
     box-shadow: 0 0 0 2.2px rgba(128, 128, 128, 0.1);
 }
 
-.btn-close-panel i {
-    font-size: 0.85rem; /* Icona più piccola */
+#leaves-archive-root .btn-close-panel i {
+    font-size: 9px;
 }
 
 /* Panel Content */
-.panel-content {
+#leaves-archive-root .panel-content {
     flex: 1;
     display: flex;
     flex-direction: column;
     padding: 12px 10px 12px 13px;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #c0c0c0 #f5f5f5;
 }
 
 /* Scrollbar moderna e sottile per panel content */
-.panel-content::-webkit-scrollbar {
-    width: 5px; /* Scrollbar più sottile */
+#leaves-archive-root .panel-content::-webkit-scrollbar {
+    width: 5px;
 }
 
-.panel-content::-webkit-scrollbar-track {
+#leaves-archive-root .panel-content::-webkit-scrollbar-track {
     background: #f5f5f5;
     border-radius: 3px;
 }
 
-.panel-content::-webkit-scrollbar-thumb {
+#leaves-archive-root .panel-content::-webkit-scrollbar-thumb {
     background: #c0c0c0;
     border-radius: 3px;
     transition: background 0.2s ease;
 }
 
-.panel-content::-webkit-scrollbar-thumb:hover {
+#leaves-archive-root .panel-content::-webkit-scrollbar-thumb:hover {
     background: #a0a0a0;
 }
 
-/* Firefox */
-.panel-content {
-    scrollbar-width: thin;
-    scrollbar-color: #c0c0c0 #f5f5f5;
-}
-
 /* Periodo Presets Container */
-.periodo-presets-container {
+#leaves-archive-root .periodo-presets-container {
     display: flex;
-    gap: 4px; /* Gap ridotto */
+    gap: 4px;
     margin-bottom: 8px;
     padding: 0 8px 8px 8px;
     flex-wrap: wrap;
-    justify-content: flex-start; /* Allinea a sinistra */
+    justify-content: flex-start;
 }
 
-.preset-btn {
-    padding: 2px 6px; /* Padding ridotto */
-    font-size: 0.75rem; /* Font più piccolo */
+#leaves-archive-root .preset-btn {
+    padding: 2px 6px;
+    font-size: 8px;
     font-weight: 500;
     color: #333333;
     background-color: #ffffff;
@@ -118,26 +114,26 @@
     transition: all 0.2s ease;
     white-space: nowrap;
     flex-shrink: 0;
-    flex-grow: 1; /* I bottoni si espandono per riempire lo spazio */
+    flex-grow: 1;
     text-align: center;
 }
 
-.preset-btn:hover {
+#leaves-archive-root .preset-btn:hover {
     background-color: #f5f5f5;
     border-color: #a0a0a0;
     color: #000000;
 }
 
-.preset-btn:active {
+#leaves-archive-root .preset-btn:active {
     background-color: #e0e0e0;
 }
 
-.preset-btn:focus {
+#leaves-archive-root .preset-btn:focus {
     outline: none;
     box-shadow: 0 0 0 2.2px rgba(128, 128, 128, 0.1);
 }
 
-.preset-btn.active {
+#leaves-archive-root .preset-btn.active {
     background-color: #000000;
     color: #ffffff;
     border-color: #000000;
@@ -145,7 +141,7 @@
 }
 
 /* Calendar Container */
-.calendar-container {
+#leaves-archive-root .calendar-container {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -153,15 +149,15 @@
 }
 
 /* No Data Message */
-.calendar-no-data {
+#leaves-archive-root .calendar-no-data {
     text-align: center;
     padding: 15px;
     color: #666666;
-    font-size: 0.8rem;
+    font-size: 8px;
 }
 
 /* Month Calendar */
-.month-calendar {
+#leaves-archive-root .month-calendar {
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -169,8 +165,8 @@
 }
 
 /* Month Header */
-.month-header {
-    font-size: 0.9rem; /* Font ridotto */
+#leaves-archive-root .month-header {
+    font-size: 9px;
     font-weight: 700;
     color: #000000;
     padding: 2px 0;
@@ -179,18 +175,18 @@
 }
 
 /* Calendar Grid */
-.calendar-grid {
+#leaves-archive-root .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     width: 100%;
-    background-color: #ffffff; /* Assicura linee griglia visibili col gap */
+    background-color: #ffffff;
     border: 1px solid #e0e0e0;
-	padding: 12px
+	padding: 12px;
 }
 
 /* Calendar Weekday Header */
-.calendar-weekday {
-    font-size: 0.81rem; /* Font ridotto */
+#leaves-archive-root .calendar-weekday {
+    font-size: 8px;
     font-weight: 600;
     color: #666666;
     text-align: center;
@@ -200,73 +196,71 @@
 }
 
 /* Calendar Day */
-.calendar-day {
+#leaves-archive-root .calendar-day {
     display: flex;
     flex-direction: column;
     padding: 1px 2px;
-    font-size: 0.7rem; /* Font ridotto */
+    font-size: 7px;
     color: #000000;
     background-color: #ffffff;
-    /* border rimossi perché usiamo il gap della grid */
     cursor: default;
     position: relative;
     height: auto;
     justify-content: flex-start;
-    min-height: 32px; /* Altezza cella ridotta da 42px a 32px */
+    min-height: 32px;
 }
 
-.calendar-day.empty {
+#leaves-archive-root .calendar-day.empty {
     background-color: #ffffff;
     border: none;
     cursor: default;
 }
 
-.calendar-day.today {
-    background-color: #fff9e6; /* Leggero highlight per oggi */
+#leaves-archive-root .calendar-day.today {
+    background-color: #fff9e6;
     font-weight: 600;
 }
 
-.calendar-day.selected-day {
+#leaves-archive-root .calendar-day.selected-day {
     background-color: #f0f0f0;
-    /* Usiamo box-shadow invece di border per non sballare le dimensioni */
     box-shadow: inset 0 0 0 1.5px #3b82f6;
     font-weight: 600;
 }
 
 /* Period range selection styles */
-.calendar-day.period-start {
+#leaves-archive-root .calendar-day.period-start {
     background-color: #000000;
     color: #ffffff;
     font-weight: 600;
 }
 
-.calendar-day.period-end {
+#leaves-archive-root .calendar-day.period-end {
     background-color: #000000;
     color: #ffffff;
     font-weight: 600;
 }
 
-.calendar-day.period-range {
+#leaves-archive-root .calendar-day.period-range {
     background-color: #f0f0f0;
 }
 
 /* Day number container */
-.calendar-day-number {
-    font-size: 0.85rem; /* Font ridotto */
+#leaves-archive-root .calendar-day-number {
+    font-size: 9px;
     font-weight: 600;
     align-self: flex-start;
 }
 
 /* Sunday - numero rosso per domeniche */
-.calendar-day-number.sunday {
-    color: #db0000; /* red-500 */
-    font-size: 0.85rem;
+#leaves-archive-root .calendar-day-number.sunday {
+    color: #db0000;
+    font-size: 9px;
     font-weight: 600;
     align-self: flex-start;
 }
 
 /* Badge container */
-.calendar-day-badges {
+#leaves-archive-root .calendar-day-badges {
     display: flex;
     flex-direction: column;
     gap: 1px;
@@ -276,8 +270,8 @@
 }
 
 /* Calendar Badge */
-.calendar-badge {
-    font-size: 0.55rem; /* Badge molto piccoli per stare nel 25% width */
+#leaves-archive-root .calendar-badge {
+    font-size: 6px;
     font-weight: 500;
     padding: 0 1px;
     border-radius: 1px;
@@ -286,32 +280,31 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    height: 11px; /* Altezza forzata per uniformità */
+    height: 11px;
 }
 
-.calendar-badge-ferie {
-    background-color: #f97316; /* orange-500 */
+#leaves-archive-root .calendar-badge-ferie {
+    background-color: #f97316;
     color: #ffffff;
 }
 
-.calendar-badge-permesso {
-    background-color: #3b82f6; /* blue-500 */
+#leaves-archive-root .calendar-badge-permesso {
+    background-color: #3b82f6;
     color: #ffffff;
 }
 
 /* Selected request highlight */
-.calendar-day.selected-request {
+#leaves-archive-root .calendar-day.selected-request {
     box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
     z-index: 5;
 }
 
 /* Indicatore stato approvato/rifiutato (Barra colorata laterale) */
-/* Poiché lo spazio è poco, usiamo un bordo destro colorato */
-.calendar-day.stato-approvato {
+#leaves-archive-root .calendar-day.stato-approvato {
     box-shadow: inset -3px 0 0 0 #22c55e;
 }
 
-.calendar-day.stato-rifiutato {
+#leaves-archive-root .calendar-day.stato-rifiutato {
     box-shadow: inset -3px 0 0 0 #ef4444;
 }
 
@@ -319,11 +312,9 @@
 /* Quando lo schermo si restringe, il calendario diventa overlay e scorre sopra le approval-row */
 /* Breakpoint: larghezza minima lista (600px) + larghezza minima calendario (380px) = 980px */
 @media (max-width: 980px) {
-    .detail-panel.panel-open {
-        /* Mantiene la larghezza minima assoluta */
+    #leaves-archive-root .detail-panel.panel-open {
         width: 380px;
         min-width: 380px;
-        /* Diventa overlay, scorre sopra le approval-row */
         position: absolute;
         right: 0;
         top: 0;
@@ -335,7 +326,7 @@
 
 /* Mobile: calendario a schermo intero */
 @media (max-width: 691px) {
-    .detail-panel.panel-open {
+    #leaves-archive-root .detail-panel.panel-open {
         width: 100%;
         min-width: 100%;
         position: absolute;
@@ -347,16 +338,16 @@
     }
 
     /* Mostra il pulsante di chiusura solo quando il calendario è a schermo intero */
-    .btn-close-panel {
+    #leaves-archive-root .btn-close-panel {
         display: flex;
     }
 
-    .list-section.panel-open {
+    #leaves-archive-root .list-section.panel-open {
         width: 0;
         overflow: hidden;
     }
 
-    .calendar-day {
+    #leaves-archive-root .calendar-day {
         min-height: 50px;
     }
 }

@@ -1,5 +1,13 @@
-(function() {
-    'use strict';
+'use strict';
+
+// ============================================================================
+// FUNZIONE DI INIZIALIZZAZIONE LEAVES ARCHIVE
+// ============================================================================
+function initLeavesArchive(containerElement) {
+    if (!containerElement) {
+        console.error('initLeavesArchive: containerElement è obbligatorio');
+        return;
+    }
 
     // ============================================================================
     // 1. UTILS MODULE - Funzioni helper
@@ -1190,11 +1198,6 @@
             renderCalendar(store);
             updateCalendarYearInput(store);
 
-            const hideFilterSpinner = store.getState('hideFilterSpinner');
-            if (hideFilterSpinner) {
-                hideFilterSpinner(store);
-            }
-
             let periodFilteredData = [];
             const currentAllCalendarData = store.getState('allCalendarData');
             if (currentAllCalendarData && Array.isArray(currentAllCalendarData) && currentAllCalendarData.length > 0) {
@@ -1299,11 +1302,6 @@
 
             const presetButtons = root ? root.querySelectorAll('.preset-btn') : [];
             presetButtons.forEach(btn => btn.classList.remove('active'));
-
-            const hideFilterSpinner = store.getState('hideFilterSpinner');
-            if (hideFilterSpinner) {
-                hideFilterSpinner(store);
-            }
 
             const setFiltersEnabled = store.getState('setFiltersEnabled');
             if (setFiltersEnabled) {
@@ -2362,38 +2360,6 @@
             }
         }
 
-        function showFilterSpinner(store) {
-            const root = store.getState('root');
-            const filterBarContainer = root.querySelector('.filter-bar-container');
-            if (!filterBarContainer) return;
-
-            const existingSpinner = filterBarContainer.querySelector('.filter-spinner-container');
-            if (existingSpinner) {
-                existingSpinner.remove();
-            }
-
-            const spinnerContainer = document.createElement('div');
-            spinnerContainer.className = 'filter-spinner-container';
-            spinnerContainer.innerHTML = `
-                <div class="spinner-border spinner-border-sm" role="status">
-                    <span class="visually-hidden">Caricamento...</span>
-                </div>
-            `;
-            
-            filterBarContainer.appendChild(spinnerContainer);
-        }
-
-        function hideFilterSpinner(store) {
-            const root = store.getState('root');
-            const filterBarContainer = root.querySelector('.filter-bar-container');
-            if (!filterBarContainer) return;
-
-            const spinnerContainer = filterBarContainer.querySelector('.filter-spinner-container');
-            if (spinnerContainer) {
-                spinnerContainer.remove();
-            }
-        }
-
         function showListSpinner(store) {
             const root = store.getState('root');
             const approvalList = root.querySelector('#approvalList');
@@ -2805,7 +2771,7 @@
                 return;
             }
             
-            showFilterSpinner(store);
+            setFiltersEnabled(store, false);
             showListSpinner(store);
 
             try {
@@ -2852,7 +2818,6 @@
                     approvalList.appendChild(errorMessage);
                 }
             } finally {
-                hideFilterSpinner(store);
                 hideListSpinner(store);
             }
         }
@@ -2870,7 +2835,7 @@
                 return;
             }
             
-            showFilterSpinner(store);
+            setFiltersEnabled(store, false);
             showListSpinner(store);
             
             try {
@@ -2901,7 +2866,6 @@
                     approvalList.appendChild(errorMessage);
                 }
             } finally {
-                hideFilterSpinner(store);
                 hideListSpinner(store);
             }
         }
@@ -3037,7 +3001,6 @@
 
             store.setState('handleFilterChange', handleFilterChange);
             store.setState('setFiltersEnabled', setFiltersEnabled);
-            store.setState('hideFilterSpinner', hideFilterSpinner);
             store.setState('fetchLeaveAdminScreenConfig', fetchLeaveAdminScreenConfig);
             store.setState('buildFiltersFromConfig', buildFiltersFromConfig);
             store.setState('buildStatusFilter', buildStatusFilter);
@@ -3049,7 +3012,6 @@
 
             let configData = null;
             try {
-                showFilterSpinner(store);
                 configData = await fetchLeaveAdminScreenConfig(store);
                 
                 if (configData && typeof configData === 'object') {
@@ -3069,8 +3031,6 @@
                     buildStatusFilter(store);
                 }
             } finally {
-                hideFilterSpinner(store);
-                
                 const selectedPeriod = store.getState('selectedPeriod');
                 if (!selectedPeriod || !selectedPeriod.startDate) {
                     setFiltersEnabled(store, false); 
@@ -3091,7 +3051,6 @@
             init: init,
             handleFilterChange: handleFilterChange,
             setFiltersEnabled: setFiltersEnabled,
-            hideFilterSpinner: hideFilterSpinner,
             fetchLeaveAdminScreenConfig: fetchLeaveAdminScreenConfig,
             buildFiltersFromConfig: buildFiltersFromConfig,
             buildStatusFilter: buildStatusFilter,
@@ -3101,28 +3060,20 @@
     })();
 
     // ============================================================================
-    // 6. API PUBBLICA - Inizializzazione
+    // 6. INIZIALIZZAZIONE COMPONENTI
     // ============================================================================
-    window.initLeavesArchive = function(containerElement) {
-        if (!containerElement) {
-            console.error('initLeavesArchive: containerElement è obbligatorio');
-            return;
-        }
+    const store = hrStore();
+    
+    // Crea il DOM dal template literal (come in BuyInCloud)
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = store.template.trim();
+    const rootElement = tempDiv.firstElementChild;
+    
+    // Inserisce il root nel container
+    containerElement.appendChild(rootElement);
+    
+    store.setState('root', rootElement);
 
-        const store = LeavesArchiveStore();
-        
-        // Crea il DOM dal template literal (come in BuyInCloud)
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = store.template.trim();
-        const rootElement = tempDiv.firstElementChild;
-        
-        // Inserisce il root nel container
-        containerElement.appendChild(rootElement);
-        
-        store.setState('root', rootElement);
-
-        detailPanel.init(store);
-        filters.init(store);
-    };
-
-})();
+    detailPanel.init(store);
+    filters.init(store);
+}

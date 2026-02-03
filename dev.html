@@ -30,8 +30,9 @@
 
             function initWidget() {
                 const container = document.getElementById('widget-container');
-                if (container && typeof window.initLeavesArchive === 'function') {
-                    window.initLeavesArchive(container);
+                if (container && typeof initStore === 'function' && typeof initLeavesArchive === 'function') {
+                    initStore();
+                    initLeavesArchive(container);
                 } else {
                     setTimeout(initWidget, 50);
                 }
@@ -49,7 +50,7 @@
             appendScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js');
             appendScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js');
             
-            appendScript('js/LeavesArchiveStore.js');
+            appendScript('js/store.js');
             appendScript('js/main.js', function() {
                 initWidget();
             });

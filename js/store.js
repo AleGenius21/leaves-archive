@@ -1,10 +1,9 @@
-(function() {
-    'use strict';
+'use strict';
 
-    // ============================================================================
-    // TEMPLATE HTML - Template literal come in BuyInCloud
-    // ============================================================================
-    const leavesArchiveTemplate = `
+// ============================================================================
+// TEMPLATE HTML - Template literal come in BuyInCloud
+// ============================================================================
+const leavesArchiveTemplate = `
         <div id="leaves-archive-root">
             <div class="container-fluid pt-3 pb-0 px-0">
                 <!-- Barra filtri - struttura statica -->
@@ -99,14 +98,14 @@
                 </div>
             </div>
         </div>
-    `;
+`;
 
-    // ============================================================================
-    // STORE CENTRALE con Closure
-    // ============================================================================
-    function LeavesArchiveStore() {
-        // Stato privato in closure
-        const state = {
+// ============================================================================
+// STORE CENTRALE con Closure
+// ============================================================================
+function hrStore() {
+    // Stato privato in closure
+    const state = {
             selectedPeriod: null,
             allRequestsData: [],
             filteredRequestsData: [],
@@ -127,42 +126,44 @@
             displayedCalendarYearEnd: null,
             yearPickerWindowStart: null,
             calendarScrollInitialized: false,
-            defaultDateApplied: false
-        };
+        defaultDateApplied: false
+    };
 
-        return {
-            getState: function(key) {
-                return state[key];
-            },
-            getAllState: function() {
-                return Object.assign({}, state);
-            },
-            setState: function(key, value) {
-                state[key] = value;
-            },
-            setStateBatch: function(updates) {
-                Object.keys(updates).forEach(key => {
-                    state[key] = updates[key];
-                });
-            },
-            resetState: function() {
-                Object.keys(state).forEach(key => {
-                    if (key === 'root') {
-                        state[key] = null;
-                    } else if (Array.isArray(state[key])) {
-                        state[key] = [];
-                    } else if (typeof state[key] === 'boolean') {
-                        state[key] = false;
-                    } else {
-                        state[key] = null;
-                    }
-                });
-            },
-            template: leavesArchiveTemplate
-        };
-    }
+    return {
+        getState: function(key) {
+            return state[key];
+        },
+        getAllState: function() {
+            return Object.assign({}, state);
+        },
+        setState: function(key, value) {
+            state[key] = value;
+        },
+        setStateBatch: function(updates) {
+            Object.keys(updates).forEach(key => {
+                state[key] = updates[key];
+            });
+        },
+        resetState: function() {
+            Object.keys(state).forEach(key => {
+                if (key === 'root') {
+                    state[key] = null;
+                } else if (Array.isArray(state[key])) {
+                    state[key] = [];
+                } else if (typeof state[key] === 'boolean') {
+                    state[key] = false;
+                } else {
+                    state[key] = null;
+                }
+            });
+        },
+        template: leavesArchiveTemplate
+    };
+}
 
-    // Esporta globalmente per compatibilità con il pattern esistente
-    window.LeavesArchiveStore = LeavesArchiveStore;
-
-})();
+// ============================================================================
+// FUNZIONE DI INIZIALIZZAZIONE STORE
+// ============================================================================
+function initStore() {
+    window.hrStore = hrStore;
+}

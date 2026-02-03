@@ -653,21 +653,6 @@
 	margin-right: 25px;
 }
 
-/* Spinner Container per Filter Bar */
-#leaves-archive-root .filter-spinner-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    border-radius: 3.3px;
-}
-
 /* Spinner Container per Lista */
 #leaves-archive-root .list-spinner-container {
     display: flex;

@@ -2,9 +2,23 @@
 
 /**
  * Filters Component - Modulo filtri isolato e configurabile
- * initFilters(store, config) con config minimale: { endpoint, type }
+ * initFilters(mainConfig) con mainConfig: { store, api, settings: { endpoint, type } }
  */
-function initFilters(store, config) {
+function initFilters(mainConfig) {
+    // Extract dependencies from config
+    const store = mainConfig.store;
+    const api = mainConfig.api;
+    const config = mainConfig.settings;
+
+    // Validate required dependencies
+    if (!store) {
+        console.error('initFilters: store è obbligatorio nella configurazione');
+        return;
+    }
+    if (!api) {
+        console.error('initFilters: api è obbligatorio nella configurazione');
+        return;
+    }
     const DEFAULT_TYPE_CONFIG = {
         filters: {
             search: { enabled: true, id: 'filterSearch', label: 'Ricerca' },
@@ -52,12 +66,7 @@ function initFilters(store, config) {
 
     const validated = validateConfig(config);
     const configEndpoint = validated.endpoint;
-    const typeConfig = TYPE_CONFIGS[validated.type] || DEFAULT_TYPE_CONFIG; 
-    const api = store.getState('api');
-    if (!api) {
-        console.error('initFilters: api non disponibile nello store');
-        return;
-    }
+    const typeConfig = TYPE_CONFIGS[validated.type] || DEFAULT_TYPE_CONFIG;
 
     function verifyFilterBarStructure(store) {
         const root = store.getState('root');

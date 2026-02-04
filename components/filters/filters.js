@@ -101,11 +101,7 @@ function initFilters(mainConfig) {
     }
 
     function formatDate(date) {
-        const d = new Date(date);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        return LeavesUtils.formatDateISO(date);
     }
 
     function buildApiParams(store) {
@@ -244,7 +240,7 @@ function initFilters(mainConfig) {
         if (!root) return false;
 
         const typeConfig = TYPE_CONFIGS[validated.type] || DEFAULT_TYPE_CONFIG;
-        
+
         if (typeConfig.buildStatusFilter === false) {
             const statoSelect = root.querySelector('#filterStato');
             if (statoSelect) {
@@ -255,7 +251,7 @@ function initFilters(mainConfig) {
                 statoSelect.value = '';
             }
             return false;
-        }        
+        }
 
         const statoSelect = root.querySelector('#filterStato');
         if (!statoSelect) return false;
@@ -438,19 +434,19 @@ function initFilters(mainConfig) {
         const approvalList = root.querySelector('#approvalList');
         if (!approvalList) return;
         const headers = approvalList.querySelectorAll('.reparto-section-label');
-        headers.forEach(function(header) {
+        headers.forEach(function (header) {
             let firstRow = header.nextElementSibling;
             while (firstRow && !firstRow.classList.contains('approval-row')) {
                 firstRow = firstRow.nextElementSibling;
             }
             if (!firstRow) return;
-            const updateShadowState = function() {
+            const updateShadowState = function () {
                 const headerRect = header.getBoundingClientRect();
                 const rowRect = firstRow.getBoundingClientRect();
                 header.classList.toggle('has-shadow', rowRect.top < headerRect.bottom);
             };
             approvalList.onscroll = updateShadowState;
-            const observer = new IntersectionObserver(function() { updateShadowState(); }, { root: approvalList, threshold: [0, 0.1, 0.5, 1] });
+            const observer = new IntersectionObserver(function () { updateShadowState(); }, { root: approvalList, threshold: [0, 0.1, 0.5, 1] });
             observer.observe(firstRow);
             updateShadowState();
         });
@@ -485,13 +481,13 @@ function initFilters(mainConfig) {
         const repartiCount = countUniqueReparti(data);
 
         if (!approvalRow || !approvalRow.createApprovalRow) {
-            filtered.forEach(function(requestData) {
+            filtered.forEach(function (requestData) {
                 const row = document.createElement('div');
                 row.textContent = JSON.stringify(requestData);
                 list.appendChild(row);
             });
         } else if (repartiCount < 2) {
-            filtered.forEach(function(requestData) {
+            filtered.forEach(function (requestData) {
                 list.appendChild(approvalRow.createApprovalRow(requestData, store));
             });
         } else {
@@ -539,8 +535,7 @@ function initFilters(mainConfig) {
     }
 
     function formatDateForDisplay(date) {
-        const d = new Date(date);
-        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        return LeavesUtils.formatDateDDMMYYYY(date);
     }
 
     function isFilterGroupVisible(selectId, root) {
@@ -691,7 +686,7 @@ function initFilters(mainConfig) {
             const approvalList = root.querySelector('#approvalList');
             if (approvalList) {
                 approvalList.innerHTML = '';
-            showMessage(store, 'Errore nel caricamento dei dati. Riprova.', 'text-center py-4 text-danger', { fontSize: '0.917rem', padding: '52.8px' });
+                showMessage(store, 'Errore nel caricamento dei dati. Riprova.', 'text-center py-4 text-danger', { fontSize: '0.917rem', padding: '52.8px' });
             }
         } finally {
             hideListSpinner(store);
@@ -719,17 +714,17 @@ function initFilters(mainConfig) {
             const apiData = await api.getLeavesData(params);
             store.setState('allRequestsData', [...apiData]);
             store.setState('filteredRequestsData', [...apiData]);
-            
+
             const archiveData = apiData.filter(req =>
                 req.stato === 'Approvato' || req.stato === 'Rifiutato' || req.status === 1 || req.status === 2
             );
             store.setState('allCalendarData', [...archiveData]);
-            
+
             const loadCalendarData = store.getState('loadCalendarData');
             if (loadCalendarData) {
                 loadCalendarData(store, archiveData);
             }
-            
+
             renderList(store, store.getState('filteredRequestsData'));
             updateActiveFiltersChips(store, handleFilterChange);
             updateResetButtonState(store);
@@ -754,7 +749,7 @@ function initFilters(mainConfig) {
     function handleSearchChange(store) {
         const debounceTimer = store.getState('searchDebounceTimer');
         if (debounceTimer) clearTimeout(debounceTimer);
-        const newTimer = setTimeout(function() { handleFilterChange(store); }, 2000);
+        const newTimer = setTimeout(function () { handleFilterChange(store); }, 2000);
         store.setState('searchDebounceTimer', newTimer);
     }
 
@@ -827,7 +822,7 @@ function initFilters(mainConfig) {
 
     store.setState('handleFilterChange', handleFilterChange);
     store.setState('setFiltersEnabled', setFiltersEnabled);
-    store.setState('fetchLeaveAdminScreenConfig', function() { return api.getFilterConfig(configEndpoint); });
+    store.setState('fetchLeaveAdminScreenConfig', function () { return api.getFilterConfig(configEndpoint); });
     store.setState('buildFiltersFromConfig', buildFiltersFromConfig);
     store.setState('buildStatusFilter', buildStatusFilter);
     store.setState('loadAndDisplayDayData', loadAndDisplayDayData);
@@ -846,7 +841,7 @@ function initFilters(mainConfig) {
     }
 
     api.getFilterConfig(configEndpoint)
-        .then(function(configData) {
+        .then(function (configData) {
             if (configData && typeof configData === 'object') {
                 store.setState('filterConfigData', configData);
                 buildFiltersFromConfig(store, configData);
@@ -854,10 +849,10 @@ function initFilters(mainConfig) {
                 applyFilterOptions(store);
             }
         })
-        .catch(function(error) {
+        .catch(function (error) {
             applyFilterOptions(store);
         })
-        .finally(function() {
+        .finally(function () {
             const selectedPeriod = store.getState('selectedPeriod');
             if (!selectedPeriod || !selectedPeriod.startDate) {
                 setFiltersEnabled(store, false);

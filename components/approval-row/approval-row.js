@@ -1,68 +1,24 @@
 /* components/approval-row/approval-row.js */
 const initApprovalRow = (config) => {
     // Estrai le dipendenze da config
-    const { store } = config; 
+    const { store } = config;
 
-    function formatDateDDMMYY(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString + 'T00:00:00');
-        if (isNaN(date.getTime())) return dateString;
-
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = String(date.getFullYear()).slice(-2);
-        return `${day}/${month}/${year}`;
+    function formatDateDDMMYY(dateString) { return LeavesUtils.formatDateDDMMYY(dateString); }
+    function formatDayDDMMYY(dateString) { return LeavesUtils.formatDayDDMMYY(dateString); }
+    function formatTimeToHHMM(timeString) { return LeavesUtils.formatTimeToHHMM(timeString); }
+    function formatDateItalian(dateString) { return LeavesUtils.formatDateItalian(dateString); }
+    function normalizeQuantity(value, unit) { return LeavesUtils.normalizeQuantity(value, unit); }
+    function parseColorToRgb(color, root) { return LeavesUtils.parseColorToRgb(color, root); }
+    function getRelativeLuminance(color, root) { return LeavesUtils.getRelativeLuminance(color, root); }
+    function applyDepartmentBadgeStyle(badgeElement, departmentColor, root) {
+        if (!badgeElement || !departmentColor) return;
+        badgeElement.style.backgroundColor = departmentColor;
+        badgeElement.style.color = LeavesUtils.getTextColorForBackground(departmentColor, root);
     }
-
-    function formatDayDDMMYY(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString + 'T00:00:00');
-        if (isNaN(date.getTime())) return dateString;
-
-        const giorniSettimana = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-        const giornoSettimana = giorniSettimana[date.getDay()];
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = String(date.getFullYear()).slice(-2);
-        return `<span class="day-name">${giornoSettimana}</span> ${day}/${month}/${year}`;
-    }
-
-    function formatTimeToHHMM(timeString) {
-        if (!timeString || typeof timeString !== 'string') return timeString || '';
-        return timeString.length >= 5 ? timeString.substring(0, 5) : timeString;
-    }
-
-    function formatDateItalian(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString + 'T00:00:00');
-        if (isNaN(date.getTime())) return dateString;
-        
-        const giorniSettimana = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-        const mesi = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-        
-        return `${giorniSettimana[date.getDay()]} ${date.getDate()} ${mesi[date.getMonth()]}`;
-    }
-
-    function normalizeQuantity(value, unit) {
-        if (typeof value !== 'number' || isNaN(value)) {
-            return value;
-        }
-        if (unit === 'hours') {
-            const remainder = value % 1;
-            if (remainder === 0 || remainder === 0.5) {
-                return value;
-            }
-            if (remainder < 0.25) {
-                return Math.floor(value);
-            } else if (remainder < 0.75) {
-                return Math.floor(value) + 0.5;
-            } else {
-                return Math.ceil(value);
-            }
-        } else if (unit === 'days') {
-            return Math.round(value);
-        }
-        return value;
+    function applyTaskBadgeStyle(badgeElement, taskColor, root) {
+        if (!badgeElement || !taskColor) return;
+        badgeElement.style.backgroundColor = taskColor;
+        badgeElement.style.color = LeavesUtils.getTextColorForBackground(taskColor, root);
     }
 
     function extractQuantityFromMoorea(data) {
@@ -72,15 +28,15 @@ const initApprovalRow = (config) => {
             const isPermesso = typeValue === 2 || data.type_name === 'Permessi' || data.type_name === 'PERMESSO';
 
             if (isPermesso && typeof meta.hours === 'number') {
-                const normalizedHours = normalizeQuantity(meta.hours, 'hours');
+                const normalizedHours = LeavesUtils.normalizeQuantity(meta.hours, 'hours');
                 return normalizedHours + 'h';
             } else if (!isPermesso && typeof meta.days === 'number') {
-                const normalizedDays = normalizeQuantity(meta.days, 'days');
+                const normalizedDays = LeavesUtils.normalizeQuantity(meta.days, 'days');
                 return normalizedDays + 'g';
             }
         }
         if (typeof data.ore === 'number' && data.ore > 0) {
-            const normalizedHours = normalizeQuantity(data.ore, 'hours');
+            const normalizedHours = LeavesUtils.normalizeQuantity(data.ore, 'hours');
             return normalizedHours + 'h';
         }
         return '';
@@ -95,13 +51,13 @@ const initApprovalRow = (config) => {
             let timeText = null;
 
             if (isPermesso) {
-                dateText = formatDateItalian(data.dataInizio);
+                dateText = LeavesUtils.formatDateItalian(data.dataInizio);
                 const giornataIntera = data.giornataIntera === 1 || data.giornataIntera === true;
 
                 if (!giornataIntera) {
                     if (data.oraInizio && data.oraFine) {
                         if (typeof data.oraInizio === 'string' && typeof data.oraFine === 'string') {
-                            timeText = `${formatTimeToHHMM(data.oraInizio)} - ${formatTimeToHHMM(data.oraFine)}`;
+                            timeText = `${LeavesUtils.formatTimeToHHMM(data.oraInizio)} - ${LeavesUtils.formatTimeToHHMM(data.oraFine)}`;
                         } else if (typeof data.oraInizio === 'number' && typeof data.oraFine === 'number') {
                             const hoursInizio = Math.floor(data.oraInizio / 60);
                             const minsInizio = data.oraInizio % 60;
@@ -115,9 +71,9 @@ const initApprovalRow = (config) => {
                 }
             } else {
                 if (data.dataFine && data.dataFine !== data.dataInizio) {
-                    dateText = 'Da ' + formatDateItalian(data.dataInizio) + ' a ' + formatDateItalian(data.dataFine);
+                    dateText = 'Da ' + LeavesUtils.formatDateItalian(data.dataInizio) + ' a ' + LeavesUtils.formatDateItalian(data.dataFine);
                 } else {
-                    dateText = formatDateItalian(data.dataInizio);
+                    dateText = LeavesUtils.formatDateItalian(data.dataInizio);
                 }
             }
 
@@ -141,7 +97,7 @@ const initApprovalRow = (config) => {
             let timeText = null;
 
             if (isPermesso) {
-                dateText = formatDateItalian(firstDate);
+                dateText = LeavesUtils.formatDateItalian(firstDate);
                 const giornataIntera = (firstLeave.interaGiornata === 1) || (data.giornataIntera === 1 || data.giornataIntera === true);
 
                 if (!giornataIntera) {
@@ -149,14 +105,14 @@ const initApprovalRow = (config) => {
                     const orarioFine = firstLeave.orarioFine || firstLeave.timeFine || firstLeave.orario_fine;
 
                     if (orarioInizio && orarioFine) {
-                        timeText = `${formatTimeToHHMM(orarioInizio)} - ${formatTimeToHHMM(orarioFine)}`;
+                        timeText = `${LeavesUtils.formatTimeToHHMM(orarioInizio)} - ${LeavesUtils.formatTimeToHHMM(orarioFine)}`;
                     }
                 }
             } else {
                 if (firstDate === lastDate || sortedLeaves.length === 1) {
-                    dateText = formatDateItalian(firstDate);
+                    dateText = LeavesUtils.formatDateItalian(firstDate);
                 } else {
-                    dateText = 'Da ' + formatDateItalian(firstDate) + ' a ' + formatDateItalian(lastDate);
+                    dateText = 'Da ' + LeavesUtils.formatDateItalian(firstDate) + ' a ' + LeavesUtils.formatDateItalian(lastDate);
                 }
             }
 
@@ -167,159 +123,10 @@ const initApprovalRow = (config) => {
         let timeText = null;
 
         if (isPermesso && data.orario_inizio && data.orario_fine) {
-            timeText = `${formatTimeToHHMM(data.orario_inizio)} - ${formatTimeToHHMM(data.orario_fine)}`;
+            timeText = `${LeavesUtils.formatTimeToHHMM(data.orario_inizio)} - ${LeavesUtils.formatTimeToHHMM(data.orario_fine)}`;
         }
 
         return { dateText, timeText };
-    }
-
-    function parseColorToRgb(color, root) {
-        if (!color || typeof color !== 'string') return null;
-        const trimmedColor = color.trim();
-        
-        if (trimmedColor.startsWith('#')) {
-            const hex = trimmedColor.slice(1);
-            if (hex.length === 6) {
-                return {
-                    r: parseInt(hex.substring(0, 2), 16),
-                    g: parseInt(hex.substring(2, 4), 16),
-                    b: parseInt(hex.substring(4, 6), 16)
-                };
-            }
-            if (hex.length === 3) {
-                return {
-                    r: parseInt(hex[0] + hex[0], 16),
-                    g: parseInt(hex[1] + hex[1], 16),
-                    b: parseInt(hex[2] + hex[2], 16)
-                };
-            }
-        }
-        
-        const rgbMatch = trimmedColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-        if (rgbMatch) {
-            return {
-                r: parseInt(rgbMatch[1], 10),
-                g: parseInt(rgbMatch[2], 10),
-                b: parseInt(rgbMatch[3], 10)
-            };
-        }
-        
-        const hslMatch = trimmedColor.match(/hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/i);
-        if (hslMatch) {
-            const h = parseInt(hslMatch[1], 10) / 360;
-            const s = parseInt(hslMatch[2], 10) / 100;
-            const l = parseInt(hslMatch[3], 10) / 100;
-            
-            const c = (1 - Math.abs(2 * l - 1)) * s;
-            const x = c * (1 - Math.abs((h * 6) % 2 - 1));
-            const m = l - c / 2;
-            
-            let r, g, b;
-            if (h < 1/6) {
-                r = c; g = x; b = 0;
-            } else if (h < 2/6) {
-                r = x; g = c; b = 0;
-            } else if (h < 3/6) {
-                r = 0; g = c; b = x;
-            } else if (h < 4/6) {
-                r = 0; g = x; b = c;
-            } else if (h < 5/6) {
-                r = x; g = 0; b = c;
-            } else {
-                r = c; g = 0; b = x;
-            }
-            
-            return {
-                r: Math.round((r + m) * 255),
-                g: Math.round((g + m) * 255),
-                b: Math.round((b + m) * 255)
-            };
-        }
-        
-        const colorNames = {
-            'black': { r: 0, g: 0, b: 0 },
-            'white': { r: 255, g: 255, b: 255 },
-            'red': { r: 255, g: 0, b: 0 },
-            'green': { r: 0, g: 128, b: 0 },
-            'blue': { r: 0, g: 0, b: 255 },
-            'yellow': { r: 255, g: 255, b: 0 },
-            'cyan': { r: 0, g: 255, b: 255 },
-            'magenta': { r: 255, g: 0, b: 255 },
-            'orange': { r: 255, g: 165, b: 0 },
-            'firebrick': { r: 178, g: 34, b: 34 }
-        };
-        
-        const lowerColor = trimmedColor.toLowerCase();
-        if (colorNames[lowerColor]) {
-            return colorNames[lowerColor];
-        }
-        
-        try {
-            const tempEl = document.createElement('div');
-            tempEl.style.cssText = 'position:absolute;left:-9999px;';
-            tempEl.style.color = trimmedColor;
-            const appendTarget = (typeof root !== 'undefined' && root && root.appendChild) ? root : null;
-            if (!appendTarget) return null;
-            appendTarget.appendChild(tempEl);
-            const computedColor = window.getComputedStyle(tempEl).color;
-            appendTarget.removeChild(tempEl);
-            
-            const rgbComputed = computedColor.match(/\d+/g);
-            if (rgbComputed && rgbComputed.length >= 3) {
-                return {
-                    r: parseInt(rgbComputed[0], 10),
-                    g: parseInt(rgbComputed[1], 10),
-                    b: parseInt(rgbComputed[2], 10)
-                };
-            }
-        } catch (e) {
-            // Ignora errori
-        }
-        
-        return null;
-    }
-
-    function getRelativeLuminance(color, root) {
-        const rgb = parseColorToRgb(color, root);
-        if (!rgb) return 0.5;
-        
-        const r = rgb.r / 255;
-        const g = rgb.g / 255;
-        const b = rgb.b / 255;
-        
-        const linearize = (val) => {
-            return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
-        };
-        
-        const rLinear = linearize(r);
-        const gLinear = linearize(g);
-        const bLinear = linearize(b);
-        
-        const luminance = 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
-        
-        return luminance;
-    }
-
-    function applyDepartmentBadgeStyle(badgeElement, departmentColor, root) {
-        if (!badgeElement || !departmentColor) {
-            return;
-        }
-
-        badgeElement.style.backgroundColor = departmentColor;
-        const luminance = getRelativeLuminance(departmentColor, root);
-        const textColor = luminance > 0.45 ? '#000000' : '#ffffff';
-        badgeElement.style.color = textColor;
-    }
-
-    function applyTaskBadgeStyle(badgeElement, taskColor, root) {
-        if (!badgeElement || !taskColor) {
-            return;
-        }
-        
-        badgeElement.style.backgroundColor = taskColor;
-        const luminance = getRelativeLuminance(taskColor, root);
-        const textColor = luminance > 0.45 ? '#000000' : '#ffffff';
-        badgeElement.style.color = textColor;
     }
 
     function createApprovalRow(data, store) {
@@ -444,9 +251,9 @@ const initApprovalRow = (config) => {
                 `;
             } else if (unitChar === 'h') {
                 label = (numberVal === '1') ? 'ora' : 'ore';
-                
+
                 const isInteger = Number.isInteger(numericValue);
-                
+
                 if (isInteger) {
                     quantitySpan.innerHTML = `
                         <span class="qty-number">${numberVal}</span>
@@ -482,7 +289,7 @@ const initApprovalRow = (config) => {
 
         const dateInfo = extractDateInfoFromMoorea(data);
         const isPermesso = typeValue === 2 || data.type_name === 'Permessi';
-        
+
         const textContainer = document.createElement('div');
         textContainer.style.display = 'flex';
         textContainer.style.flexDirection = 'column';
@@ -493,7 +300,7 @@ const initApprovalRow = (config) => {
             if (data.dataInizio) {
                 start = formatDateDDMMYY(data.dataInizio);
                 end = data.dataFine ? formatDateDDMMYY(data.dataFine) : start;
-            } 
+            }
             else if (data.moorea_obj && data.moorea_obj.leaves && data.moorea_obj.leaves.length > 0) {
                 const leaves = data.moorea_obj.leaves;
                 const sortedLeaves = [...leaves].sort((a, b) => new Date(a.dataInizio) - new Date(b.dataInizio));
@@ -508,7 +315,7 @@ const initApprovalRow = (config) => {
                 } else {
                     htmlText = `<span class="date-preposition">Da</span> ${start} <span class="date-preposition">a</span> ${end}`;
                 }
-                
+
                 const simpleSpan = document.createElement('span');
                 simpleSpan.className = 'date-range-normal';
                 simpleSpan.innerHTML = htmlText;
@@ -522,7 +329,7 @@ const initApprovalRow = (config) => {
             } else if (data.moorea_obj && data.moorea_obj.leaves && data.moorea_obj.leaves.length > 0) {
                 formattedDate = formatDayDDMMYY(data.moorea_obj.leaves[0].dataInizio);
             } else {
-                formattedDate = dateInfo.dateText; 
+                formattedDate = dateInfo.dateText;
             }
 
             const span = document.createElement('span');
@@ -544,7 +351,7 @@ const initApprovalRow = (config) => {
 
         const statusIcon = document.createElement('div');
         statusIcon.className = 'approval-row-status-icon';
-        
+
         if (data.status === 1) {
             statusIcon.innerHTML = '<i class="bi bi-check-lg"></i>';
             statusIcon.classList.add('status-approved');
@@ -557,7 +364,7 @@ const initApprovalRow = (config) => {
         row.appendChild(requestDetails);
         row.appendChild(statusIcon);
 
-        row.onclick = function() {
+        row.onclick = function () {
             const calendars = store.getState('calendars');
             if (calendars && calendars.open) {
                 calendars.open(store, data);

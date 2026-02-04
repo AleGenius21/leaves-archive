@@ -20,7 +20,19 @@ function initFilters(store, config) {
     };
 
     const TYPE_CONFIGS = {
-        'ferie_permessi': DEFAULT_TYPE_CONFIG,
+        'ferie_permessi': {
+            filters: {
+                search: { enabled: true, id: 'filterSearch', label: 'Ricerca' },
+                type: { enabled: true, id: 'filterType', label: 'Tipo' },
+                status: { enabled: false, id: 'filterStato', label: 'Stato' },  // ← CAMBIATO: false invece di true
+                department: { enabled: true, id: 'filterReparto', label: 'Reparto' },
+                task: { enabled: true, id: 'filterMansione', label: 'Mansione' },
+                sort: { enabled: true, id: 'filterSort', label: 'Ordina' },
+                reset: { enabled: true, id: 'filterReset', label: 'Resetta filtri' }
+            },
+            configDataMapping: { types: 'types', blocks: 'blocks', tasks: 'tasks' },
+            buildStatusFilter: false  // ← CAMBIATO: false invece di true
+        },
         'archivio': DEFAULT_TYPE_CONFIG,
         'assenze': DEFAULT_TYPE_CONFIG,
         'certificati': DEFAULT_TYPE_CONFIG,
@@ -40,6 +52,7 @@ function initFilters(store, config) {
 
     const validated = validateConfig(config);
     const configEndpoint = validated.endpoint;
+    const typeConfig = TYPE_CONFIGS[validated.type] || DEFAULT_TYPE_CONFIG; 
     const api = store.getState('api');
     if (!api) {
         console.error('initFilters: api non disponibile nello store');
@@ -220,6 +233,21 @@ function initFilters(store, config) {
     function buildStatusFilter(store) {
         const root = store.getState('root');
         if (!root) return false;
+
+        const typeConfig = TYPE_CONFIGS[validated.type] || DEFAULT_TYPE_CONFIG;
+        
+        if (typeConfig.buildStatusFilter === false) {
+            const statoSelect = root.querySelector('#filterStato');
+            if (statoSelect) {
+                const filterGroup = statoSelect.closest('.filter-group');
+                if (filterGroup) {
+                    filterGroup.classList.add('hidden');
+                }
+                statoSelect.value = '';
+            }
+            return false;
+        }        
+
         const statoSelect = root.querySelector('#filterStato');
         if (!statoSelect) return false;
         const currentValue = statoSelect.value;
@@ -723,9 +751,24 @@ function initFilters(store, config) {
         if (repartoSelect) repartoSelect.value = '';
         const mansioneSelect = root.querySelector('#filterMansione');
         if (mansioneSelect) mansioneSelect.value = '';
-        store.setState('selectedPeriod', null);
-        const clearPeriodSelection = store.getState('clearPeriodSelection');
-        if (clearPeriodSelection) clearPeriodSelection(store);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        store.setState('selectedPeriod', {
+            startDate: new Date(today),
+            endDate: new Date(today)
+        });
+        store.setState('selectedPeriodStart', new Date(today));
+        store.setState('selectedPeriodEnd', new Date(today));
+
+        store.setState('displayedCalendarYear', today.getFullYear());
+        store.setState('displayedCalendarYearEnd', null);
+        
+        const detailPanel = store.getState('detailPanel');
+        if (detailPanel && detailPanel.renderCalendar) {
+            detailPanel.renderCalendar(store);
+        }
+
         const sortSelect = root.querySelector('#filterSort');
         if (sortSelect) sortSelect.value = 'data-recente';
 

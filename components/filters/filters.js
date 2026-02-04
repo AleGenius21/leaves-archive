@@ -710,6 +710,17 @@ function initFilters(store, config) {
             const apiData = await api.getLeavesData(params);
             store.setState('allRequestsData', [...apiData]);
             store.setState('filteredRequestsData', [...apiData]);
+            
+            const archiveData = apiData.filter(req =>
+                req.stato === 'Approvato' || req.stato === 'Rifiutato' || req.status === 1 || req.status === 2
+            );
+            store.setState('allCalendarData', [...archiveData]);
+            
+            const loadCalendarData = store.getState('loadCalendarData');
+            if (loadCalendarData) {
+                loadCalendarData(store, archiveData);
+            }
+            
             renderList(store, store.getState('filteredRequestsData'));
             updateActiveFiltersChips(store, handleFilterChange);
             updateResetButtonState(store);
@@ -738,7 +749,7 @@ function initFilters(store, config) {
         store.setState('searchDebounceTimer', newTimer);
     }
 
-    function clearAllFilters(store, configEndpoint) {
+    async function clearAllFilters(store, configEndpoint) {
         const root = store.getState('root');
         const searchInput = root.querySelector('#filterSearch');
         if (searchInput) searchInput.value = '';
@@ -751,23 +762,6 @@ function initFilters(store, config) {
         if (repartoSelect) repartoSelect.value = '';
         const mansioneSelect = root.querySelector('#filterMansione');
         if (mansioneSelect) mansioneSelect.value = '';
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        store.setState('selectedPeriod', {
-            startDate: new Date(today),
-            endDate: new Date(today)
-        });
-        store.setState('selectedPeriodStart', new Date(today));
-        store.setState('selectedPeriodEnd', new Date(today));
-
-        store.setState('displayedCalendarYear', today.getFullYear());
-        store.setState('displayedCalendarYearEnd', null);
-        
-        const detailPanel = store.getState('detailPanel');
-        if (detailPanel && detailPanel.renderCalendar) {
-            detailPanel.renderCalendar(store);
-        }
 
         const sortSelect = root.querySelector('#filterSort');
         if (sortSelect) sortSelect.value = 'data-recente';
@@ -782,7 +776,13 @@ function initFilters(store, config) {
                 buildStatusFilter(store);
             }
         }
-        handleFilterChange(store);
+
+        const applyTodaySelection = store.getState('applyTodaySelection');
+        if (applyTodaySelection) {
+            await applyTodaySelection(store);
+        } else {
+            handleFilterChange(store);
+        }
     }
 
     function setupFilterListeners(store, configEndpoint) {

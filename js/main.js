@@ -1084,7 +1084,11 @@ function initLeavesArchive(containerElement, options) {
             const selectedDate = new Date(year, month, day);
             selectedDate.setHours(0, 0, 0, 0);
 
-            const period = store.getState('selectedPeriod');
+            let period = store.getState('selectedPeriod');
+            if (store.getState('periodJustReset')) {
+                store.setState('periodJustReset', false);
+                period = null;
+            }
             const periodStart = period?.startDate;
             const periodEnd = period?.endDate;
             
@@ -1250,7 +1254,15 @@ function initLeavesArchive(containerElement, options) {
             applyPeriodFilter(store, today, today);
         }
 
+        async function applyTodaySelection(store) {
+            clearPresetActiveState(store);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            await applyPeriodFilter(store, today, today);
+        }
+
         function clearPeriodSelection(store) {
+            store.setState('periodJustReset', true);
             store.setState('selectedPeriodStart', null);
             store.setState('selectedPeriodEnd', null);
             store.setState('selectedPeriod', null);
@@ -1638,6 +1650,7 @@ function initLeavesArchive(containerElement, options) {
             store.setState('clearPeriodSelection', clearPeriodSelection);
             store.setState('loadCalendarData', loadCalendarData);
             store.setState('openDetailPanel', openDetailPanel);
+            store.setState('applyTodaySelection', applyTodaySelection);
 
             loadPanelContent(store)
                 .then(() => {

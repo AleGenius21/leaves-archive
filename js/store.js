@@ -127,7 +127,8 @@ function hrStore() {
         displayedCalendarYearEnd: null,
         yearPickerWindowStart: null,
         calendarScrollInitialized: false,
-        defaultDateApplied: false
+        defaultDateApplied: false,
+        periodJustReset: false
     };
 
     return {

@@ -25,11 +25,13 @@
     <script>
 
 		(function() {
+			// Definire container nel quale inserirsi
             const container = document.getElementById('widget-container');
-            
             if (!container) return console.error("Container mancante");
 
-            const store = initLeavesArchive(container);
+			const store = hrStore();
+
+            initLeavesArchive(container, store);
 
             initFilters({
                 store: store,

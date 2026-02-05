@@ -1,12 +1,10 @@
 'use strict';
 
-function initLeavesArchive(containerElement) {
+function initLeavesArchive(containerElement, store) {
     if (!containerElement) {
         console.error('initLeavesArchive: containerElement è obbligatorio');
         return;
     }
-
-    const store = hrStore();
 
     // Crea il DOM dal template literal (come in BuyInCloud)
     const tempDiv = document.createElement('div');
@@ -17,6 +15,4 @@ function initLeavesArchive(containerElement) {
     containerElement.appendChild(rootElement);
 
     store.setState('root', rootElement);
-
-    return store;
 }

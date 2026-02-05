@@ -2,13 +2,13 @@ import { formatDateISO, formatDateDDMMYYYY } from '../../js/utils.js';
 
 /**
  * Filters Component - Modulo filtri isolato e configurabile
- * initFilters(mainConfig) con mainConfig: { store, api, settings: { endpoint, type } }
+ * initFilters(mainConfig) con mainConfig: { store, api, settings: { endpoint?, type?, buildStatusFilter?, statusCodes?, defaultStatus? } }
  */
 export function initFilters(mainConfig) {
     // Extract dependencies from config
     const store = mainConfig.store;
     const api = mainConfig.api;
-    const config = mainConfig.settings;
+    const userSettings = mainConfig.settings || {};
 
     // Validate required dependencies
     if (!store) {
@@ -19,55 +19,29 @@ export function initFilters(mainConfig) {
         console.error('initFilters: api è obbligatorio nella configurazione');
         return;
     }
-    const DEFAULT_TYPE_CONFIG = {
-        filters: {
-            search: { enabled: true, id: 'filterSearch', label: 'Ricerca' },
-            type: { enabled: true, id: 'filterType', label: 'Tipo' },
-            status: { enabled: true, id: 'filterStato', label: 'Stato' },
-            department: { enabled: true, id: 'filterReparto', label: 'Reparto' },
-            task: { enabled: true, id: 'filterMansione', label: 'Mansione' },
-            sort: { enabled: true, id: 'filterSort', label: 'Ordina' },
-            reset: { enabled: true, id: 'filterReset', label: 'Resetta filtri' }
+
+    // Default configuration values
+    const DEFAULTS = {
+        endpoint: '/leave_admin_screen_config',
+        buildStatusFilter: true,
+        statusCodes: {
+            0: 'In attesa',
+            1: 'Approvato',
+            2: 'Rifiutato',
+            3: 'Annullato'
         },
-        configDataMapping: { types: 'types', blocks: 'blocks', tasks: 'tasks' },
-        buildStatusFilter: true
+        defaultStatus: [0, 1, 2]
     };
 
-    // Configurazioni specifiche per tipologia, con possibilità di disabilitare filtri o funzionalità
-    const TYPE_CONFIGS = {
-        'ferie_permessi': {
-            filters: {
-                search: { enabled: true, id: 'filterSearch', label: 'Ricerca' },
-                type: { enabled: true, id: 'filterType', label: 'Tipo' },
-                status: { enabled: false, id: 'filterStato', label: 'Stato' },
-                department: { enabled: true, id: 'filterReparto', label: 'Reparto' },
-                task: { enabled: true, id: 'filterMansione', label: 'Mansione' },
-                sort: { enabled: true, id: 'filterSort', label: 'Ordina' },
-                reset: { enabled: true, id: 'filterReset', label: 'Resetta filtri' }
-            },
-            configDataMapping: { types: 'types', blocks: 'blocks', tasks: 'tasks' },
-            buildStatusFilter: false
-        },
-        'archivio': DEFAULT_TYPE_CONFIG,
-        'assenze': DEFAULT_TYPE_CONFIG,
-        'certificati': DEFAULT_TYPE_CONFIG,
-        'malattie': DEFAULT_TYPE_CONFIG
+    // Merge user settings with defaults
+    const settings = {
+        endpoint: userSettings.endpoint || DEFAULTS.endpoint,
+        buildStatusFilter: userSettings.buildStatusFilter !== undefined ? userSettings.buildStatusFilter : (userSettings.type === 1 ? false : DEFAULTS.buildStatusFilter),
+        statusCodes: userSettings.statusCodes || DEFAULTS.statusCodes,
+        defaultStatus: userSettings.defaultStatus || DEFAULTS.defaultStatus
     };
 
-    const SUPPORTED_TYPES = ['ferie_permessi', 'archivio', 'assenze', 'certificati', 'malattie'];
-
-    function validateConfig(config) {
-        if (!config || typeof config !== 'object') {
-            return { valid: false, type: 'ferie_permessi', endpoint: '/leave_admin_screen_config' };
-        }
-        const endpoint = (typeof config.endpoint === 'string' && config.endpoint.trim()) ? config.endpoint.trim() : '/leave_admin_screen_config';
-        const type = (SUPPORTED_TYPES.indexOf(config.type) >= 0) ? config.type : 'ferie_permessi';
-        return { valid: true, type: type, endpoint: endpoint };
-    }
-
-    const validated = validateConfig(config);
-    const configEndpoint = validated.endpoint;
-    const typeConfig = TYPE_CONFIGS[validated.type] || DEFAULT_TYPE_CONFIG;
+    const configEndpoint = settings.endpoint;
 
     function verifyFilterBarStructure(store) {
         const root = store.getState('root');
@@ -105,9 +79,9 @@ export function initFilters(mainConfig) {
 
     function buildApiParams(store) {
         const root = store.getState('root');
-        if (!root) return { status: [1, 2] };
+        if (!root) return { status: settings.defaultStatus };
 
-        const params = { status: [1, 2] };
+        const params = { status: settings.defaultStatus };
 
         const searchValue = getSelectValue('#filterSearch', root);
         if (searchValue && searchValue.trim()) {
@@ -210,10 +184,7 @@ export function initFilters(mainConfig) {
     }
 
     function getStatusString(status) {
-        if (status === 1) return 'Approvato';
-        if (status === 2) return 'Rifiutato';
-        if (status === 0) return 'In Attesa';
-        return 'Sconosciuto';
+        return settings.statusCodes[status] || '';
     }
 
     function buildSelectOptions(select, options, currentValue) {
@@ -238,9 +209,7 @@ export function initFilters(mainConfig) {
         const root = store.getState('root');
         if (!root) return false;
 
-        const typeConfig = TYPE_CONFIGS[validated.type] || DEFAULT_TYPE_CONFIG;
-
-        if (typeConfig.buildStatusFilter === false) {
+        if (settings.buildStatusFilter === false) {
             const statoSelect = root.querySelector('#filterStato');
             if (statoSelect) {
                 const filterGroup = statoSelect.closest('.filter-group');
@@ -255,10 +224,12 @@ export function initFilters(mainConfig) {
         const statoSelect = root.querySelector('#filterStato');
         if (!statoSelect) return false;
         const currentValue = statoSelect.value;
-        buildSelectOptions(statoSelect, [
-            { value: '1', text: 'Approvato', dataAttr: { name: 'data-status-id', value: '1' } },
-            { value: '2', text: 'Rifiutato', dataAttr: { name: 'data-status-id', value: '2' } }
-        ], currentValue);
+        const statusOptions = settings.defaultStatus.map(statusId => ({
+            value: String(statusId),
+            text: settings.statusCodes[statusId],
+            dataAttr: { name: 'data-status-id', value: String(statusId) }
+        }));
+        buildSelectOptions(statoSelect, statusOptions, currentValue);
         return true;
     }
 

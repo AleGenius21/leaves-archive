@@ -3,9 +3,12 @@
 // ============================================================================
 // API - Chiamate centralizzate
 // ============================================================================
-const BASE_URL = 'https://my-genius.it/wp-json/genius/v1';
-const TIMEOUT = 30000;
-const BEARER_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3Njg5MDc0MjMsImV4cCI6MTc3MDYzNTQyMywidWlkIjoyNjg1LCJ1c2VybmFtZSI6IkdOR01aTzA0RTEzWjM1NEUifQ.3AV7DDRUf1AgRJyPh_cvDd3u9_Gf7-YOSEX-KfUIAEg';
+import { SERVER_CONFIG } from './config.js';
+
+const BASE_URL = SERVER_CONFIG.baseUrl;
+const TIMEOUT = SERVER_CONFIG.timeout;
+const BEARER_TOKEN = SERVER_CONFIG.bearerToken;
+
 
 export function getFilterConfig(endpoint) {
     const urlEndpoint = endpoint || '/leave_admin_screen_config';

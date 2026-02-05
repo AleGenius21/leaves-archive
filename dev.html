@@ -124,10 +124,41 @@
 
             initLeavesArchive(container, store);
 
+
+            /*
+                const Example_FilterConfig = {
+                    store: store,                              // OBBLIGATORIO: Store globale dell'app
+                    api: store.getState('api'),                // OBBLIGATORIO: Oggetto API con getLeavesData, getFilterConfig
+                    settings: {
+                        // Endpoint per configurazione dinamica dei filtri (opzionale)
+                        endpoint: '/esempio_endpoint_config', // Default: '/leave_admin_screen_config'
+                        
+                        // Controlla se mostrare/nascondere il filtro stato (opzionale)
+                        buildStatusFilter: false,              // false=nasconde filtro stato, true=mostra filtro stato
+                        
+                        // Status di default caricati all'avvio (opzionale)
+                        defaultStatus: [1, 2],              // [1]=Approvato, [2]=Rifiutato, [0]=In attesa, [3]=Annullato
+                                                            // Default: [0, 1, 2] (tutti tranne annullati)
+                        
+                        // Mappatura personalizzata stati -> descrizioni (opzionale)
+                        statusCodes: {
+                            0: 'In attesa',
+                            1: 'Approvato', 
+                            2: 'Rifiutato',
+                            3: 'Annullato'
+                            // Puoi aggiungere altri stati se il backend li supporta
+                        }
+                    }
+                };
+            */
             initFilters({
                 store: store,
                 api: store.getState('api'),
-                settings: { type: 'ferie_permessi' }
+                settings: {
+                    endpoint: '/leave_admin_screen_config',
+                    buildStatusFilter: false,
+                    defaultStatus: [1, 2] 
+                }
             });
 
             initCalendars({

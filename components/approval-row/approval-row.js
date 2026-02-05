@@ -374,7 +374,7 @@ const initApprovalRow = (config) => {
         return row;
     }
 
-    return {
+    const api = {
         createApprovalRow: createApprovalRow,
         formatDateDDMMYY: formatDateDDMMYY,
         formatDayDDMMYY: formatDayDDMMYY,
@@ -388,4 +388,8 @@ const initApprovalRow = (config) => {
         applyDepartmentBadgeStyle: applyDepartmentBadgeStyle,
         applyTaskBadgeStyle: applyTaskBadgeStyle
     };
+
+    store.setState('approvalRow', api);
+
+    return api;
 };

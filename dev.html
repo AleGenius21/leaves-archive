@@ -1,94 +1,51 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Archivio Ferie/Permessi - Dev</title>
-</head>
-<body style="margin:0;height:100vh;overflow:hidden;">
+<div style="margin:0;height:100vh;overflow:hidden;">
     <!-- Container WordPress simulato (dimensioni fisse) -->
     <div style="width:100%;height:100%;" id="widget-container"></div>
 
+	
     <!-- Carica CSS e JS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/main.css">
+	<link rel="stylesheet" href="components/approval-row/approval-row.css">
+    <link rel="stylesheet" href="components/filters/filters.css">
+    <link rel="stylesheet" href="components/calendars/calendars.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/store.js"></script>
+
+    <script src="components/approval-row/approval-row.js"></script>
+    <script src="components/filters/filters.js"></script>
+    <script src="components/calendars/calendars.js"></script>
+    <script src="js/main.js"></script>
+
     <script>
-        (function() {
-            function appendStylesheet(href) {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = href;
-                document.head.appendChild(link);
-            }
 
-            function appendScript(src, callback) {
-                const script = document.createElement('script');
-                script.src = src;
-                if (callback) {
-                    script.onload = callback;
-                }
-                document.body.appendChild(script);
-            }
-
-            function initWidget() {
-                const container = document.getElementById('widget-container');
-                if (container && typeof initLeavesArchive === 'function' && typeof initFilters === 'function') {
-                    const store = initLeavesArchive(container);
-
-                    // Inizializzazione calendario
-                    const calendars = initCalendars({
-                        store: store,
-                        root: store.getState('root'),
-                        selectors: {
-                            container: '#calendarContainer'
-                        }
-                    });
-                    
-                    if (calendars && calendars.init) {
-                        calendars.init(store);
-                    }
-
-                    // Inizializzazione filtri
-                    const filtersConfig = {
-                        store: store,
-                        api: store.getState('api'),
-                        settings: {
-                            endpoint: "/leave_admin_screen_config",
-                            type: 'ferie_permessi'
-                        }
-                    };
-                    initFilters(filtersConfig);
-
-                    // Inizializzazione approval row
-                    const approvalRow = initApprovalRow({
-                        store: store
-                    });
-                    store.setState('approvalRow', approvalRow);
-                } else {
-                    setTimeout(initWidget, 100);
-                }
-            }
-
-            appendStylesheet('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css');
-            appendStylesheet('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css');
-            appendStylesheet('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css');
-            appendStylesheet('css/main.css');
-            appendStylesheet('components/approval-row/approval-row.css');
-            appendStylesheet('components/filters/filters.css');
-            appendStylesheet('components/calendars/calendars.css');
-
-            appendScript('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js');
-            appendScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js');
-            appendScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js');
+		(function() {
+            const container = document.getElementById('widget-container');
             
-            appendScript('js/api.js');
-            appendScript('js/utils.js');
-            appendScript('js/store.js');
-            appendScript('components/approval-row/approval-row.js');
-            appendScript('components/filters/filters.js');
-            appendScript('components/calendars/calendars.js');
-            appendScript('js/main.js', function() {
-                initWidget();
+            if (!container) return console.error("Container mancante");
+
+            const store = initLeavesArchive(container);
+
+            initFilters({
+                store: store,
+                api: store.getState('api'),
+                settings: { type: 'ferie_permessi' }
             });
+
+            initCalendars({
+                store: store,
+                root: store.getState('root'),
+                selectors: { container: '#calendarContainer' }
+            });
+
+            initApprovalRow({ store: store });
+
+            console.log("Widget avviato in modo sincrono");
         })();
     </script>
-</body>
-</html>
+</div>

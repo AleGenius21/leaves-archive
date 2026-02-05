@@ -1,12 +1,12 @@
 /* components/calendars/calendars.js */
 const initCalendars = (config) => {
-    const { store, root, selectors } = config; 
-    
+    const { store, root, selectors } = config;
+
     function loadPanelContent(store) {
         return new Promise((resolve, reject) => {
             const detailPanelElement = store.getState('detailPanelElement');
             const root = store.getState('root');
-            
+
             if (!detailPanelElement) {
                 reject('Detail panel element not found');
                 return;
@@ -19,7 +19,7 @@ const initCalendars = (config) => {
             }
             const closeBtn = root.querySelector('#btnClosePanel');
             if (closeBtn) {
-                closeBtn.onclick = function() {
+                closeBtn.onclick = function () {
                     closeDetailPanel(store);
                 };
             }
@@ -32,7 +32,7 @@ const initCalendars = (config) => {
         const detailPanelElement = store.getState('detailPanelElement');
         const listSectionElement = store.getState('listSectionElement');
         const root = store.getState('root');
-        
+
         if (!detailPanelElement || !listSectionElement) {
             console.error('Detail panel: elementi non trovati');
             return;
@@ -42,8 +42,8 @@ const initCalendars = (config) => {
 
         const filteredRequestsData = store.getState('filteredRequestsData');
         const allRequestsData = store.getState('allRequestsData');
-        const allRequestsForCalendar = filteredRequestsData && filteredRequestsData.length > 0 
-            ? [...filteredRequestsData] 
+        const allRequestsForCalendar = filteredRequestsData && filteredRequestsData.length > 0
+            ? [...filteredRequestsData]
             : (allRequestsData && allRequestsData.length > 0 ? [...allRequestsData] : []);
 
         detailPanelElement.classList.add('panel-open');
@@ -56,7 +56,7 @@ const initCalendars = (config) => {
         const detailPanelElement = store.getState('detailPanelElement');
         const listSectionElement = store.getState('listSectionElement');
         const root = store.getState('root');
-        
+
         if (!detailPanelElement || !listSectionElement) {
             return;
         }
@@ -85,7 +85,7 @@ const initCalendars = (config) => {
     function renderCalendar(store, data = null) {
         const root = store.getState('root');
         if (!root) return;
-        
+
         const calendarContainer = root.querySelector('#calendarContainer');
         if (!calendarContainer) {
             console.warn('renderCalendar: calendarContainer non trovato nel DOM');
@@ -387,7 +387,7 @@ const initCalendars = (config) => {
 
             if (!dayCell.classList.contains('empty')) {
                 dayCell.style.cursor = 'pointer';
-                dayCell.onclick = function(event) {
+                dayCell.onclick = function (event) {
                     const previousSelected = root.querySelectorAll('.calendar-day.selected-day');
                     previousSelected.forEach(el => el.classList.remove('selected-day'));
                     handleDayClick(store, year, month, day);
@@ -418,7 +418,7 @@ const initCalendars = (config) => {
         }
         const periodStart = period?.startDate;
         const periodEnd = period?.endDate;
-        
+
         // Distingue "solo inizio" (start === end, 1 giorno) da "range già scelto" (start !== end)
         const isRangeAlreadySet = periodStart && periodEnd &&
             new Date(periodStart).getTime() !== new Date(periodEnd).getTime();
@@ -459,7 +459,7 @@ const initCalendars = (config) => {
         const periodAfter = store.getState('selectedPeriod');
         const isSingleDay = periodAfter?.startDate && periodAfter?.endDate &&
             new Date(periodAfter.startDate).getTime() === new Date(periodAfter.endDate).getTime();
-        
+
         if (isSingleDay) {
             store.setState('selectedDay', { year, month, day });
             const previousSelected2 = root ? root.querySelectorAll('.calendar-day.selected-day') : [];
@@ -480,7 +480,7 @@ const initCalendars = (config) => {
 
         const startYear = normalizedStart.getFullYear();
         const endYear = normalizedEnd.getFullYear();
-        
+
         if (startYear !== endYear) {
             store.setState('displayedCalendarYear', startYear);
             store.setState('displayedCalendarYearEnd', endYear);
@@ -691,7 +691,7 @@ const initCalendars = (config) => {
     function scrollToDate(store, date, instant = false) {
         const root = store.getState('root');
         if (!root) return;
-        
+
         const calendarContainer = root.querySelector('#calendarContainer');
         if (!calendarContainer) return;
 
@@ -706,9 +706,9 @@ const initCalendars = (config) => {
                     'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
                 const headerText = `${monthNames[month]} ${year}`;
                 if (monthHeader.textContent === headerText) {
-                    monthCalendar.scrollIntoView({ 
-                        behavior: instant ? 'auto' : 'smooth', 
-                        block: 'center' 
+                    monthCalendar.scrollIntoView({
+                        behavior: instant ? 'auto' : 'smooth',
+                        block: 'center'
                     });
                 }
             }
@@ -718,14 +718,14 @@ const initCalendars = (config) => {
     function setupPresetButtons(store) {
         const root = store.getState('root');
         if (!root) return;
-        
+
         const presetContainers = root.querySelectorAll('.periodo-presets-container');
-        
+
         presetContainers.forEach(container => {
             const presetButtons = container.querySelectorAll('.preset-btn');
 
             presetButtons.forEach(btn => {
-                btn.onclick = function(e) {
+                btn.onclick = function (e) {
                     e.stopPropagation();
 
                     presetButtons.forEach(b => b.classList.remove('active'));
@@ -748,20 +748,20 @@ const initCalendars = (config) => {
     function updateCalendarYearInput(store) {
         const root = store.getState('root');
         if (!root) return;
-        
+
         const input = root.querySelector('#calendarYearInput');
         const suffix = root.querySelector('#calendarYearRangeSuffix');
         if (!input) return;
-        
+
         const displayedYear = store.getState('displayedCalendarYear');
         const displayedYearEnd = store.getState('displayedCalendarYearEnd');
-        
+
         if (displayedYearEnd != null) {
             input.value = displayedYear + ' - ' + displayedYearEnd;
         } else {
             input.value = String(displayedYear);
         }
-        
+
         if (suffix) {
             suffix.textContent = '';
             suffix.style.display = 'none';
@@ -771,10 +771,10 @@ const initCalendars = (config) => {
     function closeYearPicker(store) {
         const root = store.getState('root');
         if (!root) return;
-        
+
         const yearPicker = root.querySelector('#yearPicker');
         const wrapper = root.querySelector('.calendar-year-input-wrapper');
-        
+
         if (yearPicker) yearPicker.hidden = true;
         if (wrapper) wrapper.setAttribute('aria-expanded', 'false');
     }
@@ -782,20 +782,20 @@ const initCalendars = (config) => {
     function populateYearPicker(store) {
         const root = store.getState('root');
         if (!root) return;
-        
+
         const yearPicker = root.querySelector('#yearPicker');
         if (!yearPicker) return;
 
         const maxStartYear = Math.max(YEAR_PICKER_MIN, getYearPickerMax() - YEAR_PICKER_WINDOW_SIZE + 1);
         let windowStart = store.getState('yearPickerWindowStart');
         const displayedYear = store.getState('displayedCalendarYear');
-        
+
         if (windowStart == null) {
             windowStart = Math.max(YEAR_PICKER_MIN, displayedYear - 5);
             windowStart = Math.min(windowStart, maxStartYear);
             store.setState('yearPickerWindowStart', windowStart);
         }
-        
+
         const startYear = windowStart;
         const endYear = Math.min(startYear + YEAR_PICKER_WINDOW_SIZE - 1, getYearPickerMax());
 
@@ -804,30 +804,30 @@ const initCalendars = (config) => {
         // Header: prev, label range, next
         const header = document.createElement('div');
         header.className = 'year-picker-header';
-        
+
         const btnPrev = document.createElement('button');
         btnPrev.type = 'button';
         btnPrev.className = 'year-picker-nav-btn';
         btnPrev.setAttribute('aria-label', 'Anni precedenti');
         btnPrev.textContent = '\u2039';
-        
+
         const labelCenter = document.createElement('span');
         labelCenter.className = 'year-picker-header-label';
         labelCenter.textContent = startYear === endYear ? String(startYear) : startYear + ' – ' + endYear;
-        
+
         const btnNext = document.createElement('button');
         btnNext.type = 'button';
         btnNext.className = 'year-picker-nav-btn';
         btnNext.setAttribute('aria-label', 'Anni successivi');
         btnNext.textContent = '\u203A';
 
-        btnPrev.onclick = function(e) {
+        btnPrev.onclick = function (e) {
             e.stopPropagation();
             store.setState('yearPickerWindowStart', Math.max(YEAR_PICKER_MIN, startYear - YEAR_PICKER_WINDOW_SIZE));
             populateYearPicker(store);
         };
-        
-        btnNext.onclick = function(e) {
+
+        btnNext.onclick = function (e) {
             e.stopPropagation();
             store.setState('yearPickerWindowStart', Math.min(startYear + YEAR_PICKER_WINDOW_SIZE, maxStartYear));
             populateYearPicker(store);
@@ -841,7 +841,7 @@ const initCalendars = (config) => {
         // Griglia 4x3
         const grid = document.createElement('div');
         grid.className = 'year-picker-grid';
-        
+
         for (let y = startYear; y <= endYear; y++) {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -850,8 +850,8 @@ const initCalendars = (config) => {
             btn.textContent = y;
             btn.setAttribute('data-year', y);
             if (isSelected) btn.setAttribute('aria-pressed', 'true');
-            
-            btn.onclick = function(e) {
+
+            btn.onclick = function (e) {
                 e.stopPropagation();
                 const year = parseInt(this.getAttribute('data-year'), 10);
                 store.setState('displayedCalendarYear', year);
@@ -863,21 +863,21 @@ const initCalendars = (config) => {
                     scrollToDate(store, new Date(year, 0, 1), true);
                 }, 50);
             };
-            
+
             grid.appendChild(btn);
         }
-        
+
         yearPicker.appendChild(grid);
     }
 
     function setupYearPicker(store) {
         const root = store.getState('root');
         if (!root) return;
-        
+
         const yearInput = root.querySelector('#calendarYearInput');
         const yearPicker = root.querySelector('#yearPicker');
         const wrapper = root.querySelector('.calendar-year-input-wrapper');
-        
+
         if (!yearInput || !yearPicker) return;
 
         populateYearPicker(store);
@@ -889,12 +889,12 @@ const initCalendars = (config) => {
             if (wrapper) wrapper.setAttribute('aria-expanded', 'true');
         }
 
-        yearInput.onfocus = function(e) {
+        yearInput.onfocus = function (e) {
             e.stopPropagation();
             openPicker();
         };
-        
-        yearInput.onclick = function(e) {
+
+        yearInput.onclick = function (e) {
             e.stopPropagation();
             if (yearPicker.hidden) openPicker();
         };
@@ -904,7 +904,7 @@ const initCalendars = (config) => {
             const single = /^\s*(\d{4})\s*$/;
             const range = /^\s*(\d{4})\s*-\s*(\d{4})\s*$/;
             let m = s.match(range);
-            
+
             if (m) {
                 const a = parseInt(m[1], 10);
                 const b = parseInt(m[2], 10);
@@ -912,18 +912,18 @@ const initCalendars = (config) => {
                 if (a >= YEAR_PICKER_MIN && a <= max && b >= YEAR_PICKER_MIN && b <= max)
                     return { single: false, start: Math.min(a, b), end: Math.max(a, b) };
             }
-            
+
             m = s.match(single);
             if (m) {
                 const val = parseInt(m[1], 10);
                 if (val >= YEAR_PICKER_MIN && val <= getYearPickerMax())
                     return { single: true, start: val, end: null };
             }
-            
+
             return null;
         }
 
-        yearInput.onchange = function() {
+        yearInput.onchange = function () {
             const parsed = parseYearInputValue(yearInput.value);
             if (parsed) {
                 store.setState('displayedCalendarYear', parsed.start);
@@ -936,8 +936,8 @@ const initCalendars = (config) => {
                 updateCalendarYearInput(store);
             }
         };
-        
-        yearInput.onblur = function() {
+
+        yearInput.onblur = function () {
             const parsed = parseYearInputValue(yearInput.value);
             if (!parsed) {
                 updateCalendarYearInput(store);
@@ -945,7 +945,7 @@ const initCalendars = (config) => {
         };
 
         // Click outside handler - usa setTimeout per evitare conflitti con altri handler
-        setTimeout(function() {
+        setTimeout(function () {
             document.addEventListener('click', function closeOnOutsideClick(e) {
                 if (yearPicker.hidden) return;
                 if (!yearPicker.contains(e.target) && e.target !== yearInput && (!wrapper || !wrapper.contains(e.target))) {
@@ -957,8 +957,19 @@ const initCalendars = (config) => {
         updateCalendarYearInput(store);
     }
 
-    async function init(store) {
-        const root = store.getState('root');
+    // Auto-initialization logic
+    const api = {
+        open: openDetailPanel,
+        close: closeDetailPanel,
+        loadCalendarData: loadCalendarData,
+        renderCalendar: renderCalendar,
+        clearPeriodSelection: clearPeriodSelection
+    };
+
+    // Store api reference
+    store.setState('calendars', api);
+
+    async function autoInit() {
         if (!root) {
             console.error('Detail panel: root è obbligatorio');
             return;
@@ -979,26 +990,21 @@ const initCalendars = (config) => {
         store.setState('openDetailPanel', openDetailPanel);
         store.setState('applyTodaySelection', applyTodaySelection);
 
-        loadPanelContent(store)
-            .then(() => {
-                detailPanelElement.classList.add('panel-open');
-                listSectionElement.classList.add('panel-open');
+        try {
+            await loadPanelContent(store);
+            detailPanelElement.classList.add('panel-open');
+            listSectionElement.classList.add('panel-open');
 
-                setupYearPicker(store);
-                renderCalendar(store);
-                applyDefaultTodaySelection(store);
-            })
-            .catch(err => {
-                console.error('Detail panel init:', err);
-            });
+            setupYearPicker(store);
+            renderCalendar(store);
+            applyDefaultTodaySelection(store);
+        } catch (err) {
+            console.error('Detail panel init:', err);
+        }
     }
-    
-    return {
-        init: init,
-        open: openDetailPanel,
-        close: closeDetailPanel,
-        loadCalendarData: loadCalendarData,
-        renderCalendar: renderCalendar,
-        clearPeriodSelection: clearPeriodSelection
-    };
+
+    // Execute auto-initialization
+    autoInit();
+
+    return api;
 };

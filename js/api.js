@@ -47,6 +47,8 @@ export function getLeavesData(params, endpoint) {
     if (params.type_id !== undefined) queryParams.append('type_id', params.type_id.toString());
     if (params.department_id !== undefined) queryParams.append('department_id', params.department_id.toString());
     if (params.task_id !== undefined) queryParams.append('task_id', params.task_id.toString());
+    if (params.cantiere_id !== undefined) queryParams.append('cantiere_id', params.cantiere_id.toString());
+    if (params.post_festivo !== undefined) queryParams.append('post_festivo', params.post_festivo.toString());
     if (params.data_inizio) queryParams.append('data_inizio', params.data_inizio);
     if (params.data_fine) queryParams.append('data_fine', params.data_fine);
     if (params.sort_by) queryParams.append('sort_by', params.sort_by);

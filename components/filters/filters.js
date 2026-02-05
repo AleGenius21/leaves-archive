@@ -24,6 +24,8 @@ export function initFilters(mainConfig) {
     const DEFAULTS = {
         endpoint: '/leave_admin_screen_config',
         buildStatusFilter: true,
+        buildCantiereFilter: false,
+        buildPostFestivoFilter: false,
         statusCodes: {
             0: 'In attesa',
             1: 'Approvato',
@@ -37,6 +39,8 @@ export function initFilters(mainConfig) {
     const settings = {
         endpoint: userSettings.endpoint || DEFAULTS.endpoint,
         buildStatusFilter: userSettings.buildStatusFilter !== undefined ? userSettings.buildStatusFilter : (userSettings.type === 1 ? false : DEFAULTS.buildStatusFilter),
+        buildCantiereFilter: userSettings.buildCantiereFilter !== undefined ? userSettings.buildCantiereFilter : DEFAULTS.buildCantiereFilter,
+        buildPostFestivoFilter: userSettings.buildPostFestivoFilter !== undefined ? userSettings.buildPostFestivoFilter : DEFAULTS.buildPostFestivoFilter,
         statusCodes: userSettings.statusCodes || DEFAULTS.statusCodes,
         defaultStatus: userSettings.defaultStatus || DEFAULTS.defaultStatus
     };
@@ -73,6 +77,36 @@ export function initFilters(mainConfig) {
         if (!select || !select.value) return null;
         const option = select.selectedOptions[0];
         return option ? option.getAttribute(attrName) : null;
+    }
+
+    function getFirstAvailableValue(source, keys) {
+        if (!source) return null;
+        for (const key of keys) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+                const value = source[key];
+                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                    return value;
+                }
+            }
+        }
+        return null;
+    }
+
+    function getCantiereIdentifier(item) {
+        return item.id || item.code || item.cantiere_id || item.warehouse_id || null;
+    }
+
+    function getCantiereDisplayName(item) {
+        return item.cantiere_name || item.pretty_name || item.warehouse_name || getCantiereIdentifier(item) || '';
+    }
+
+    function isPostFestivoItem(item) {
+        const value = item.post_festivo;
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'number') {
+            return value === 1;
+        }
+        return Boolean(value);
     }
 
 
@@ -132,6 +166,26 @@ export function initFilters(mainConfig) {
             }
         }
 
+        if (settings.buildCantiereFilter !== false) {
+            const cantiereSelect = root.querySelector('#filterCantiere');
+            if (cantiereSelect && cantiereSelect.value) {
+                const cantiereId = getSelectDataAttribute('#filterCantiere', 'data-cantiere-id', root);
+                if (cantiereId) {
+                    const parsed = parseInt(cantiereId, 10);
+                    params.cantiere_id = isNaN(parsed) ? cantiereId : parsed;
+                } else {
+                    params.cantiere_id = cantiereSelect.value;
+                }
+            }
+        }
+
+        if (settings.buildPostFestivoFilter !== false) {
+            const postFestivoInput = root.querySelector('#filterPostFestivo');
+            if (postFestivoInput && postFestivoInput.checked) {
+                params.post_festivo = true;
+            }
+        }
+
         const statoSelect = root.querySelector('#filterStato');
         if (statoSelect && statoSelect.value) {
             const statusId = getSelectDataAttribute('#filterStato', 'data-status-id', root);
@@ -163,11 +217,11 @@ export function initFilters(mainConfig) {
         return params;
     }
 
-    function countUniqueValues(requestsData, key1, key2) {
+    function countUniqueValues(requestsData, key) {
         if (!Array.isArray(requestsData) || requestsData.length === 0) return 0;
         const valuesSet = new Set();
         requestsData.forEach(item => {
-            const value = item[key1] || item[key2];
+            const value = item[key];
             if (value && String(value).trim() !== '') {
                 valuesSet.add(String(value).trim());
             }
@@ -176,13 +230,14 @@ export function initFilters(mainConfig) {
     }
 
     function countUniqueReparti(requestsData) {
-        return countUniqueValues(requestsData, 'department_name', 'reparto');
+        return countUniqueValues(requestsData, 'department_name');
     }
 
     function countUniqueMansioni(requestsData) {
-        return countUniqueValues(requestsData, 'task_name', 'mansione');
+        return countUniqueValues(requestsData, 'task_name');
     }
 
+    
     function getStatusString(status) {
         return settings.statusCodes[status] || '';
     }
@@ -246,6 +301,11 @@ export function initFilters(mainConfig) {
         }
     }
 
+    function extractCantieriFromConfig(configData) {
+        if (!configData || typeof configData !== 'object') return [];
+        return Array.isArray(configData.cantieri) ? configData.cantieri : [];
+    }
+
     function buildFiltersFromConfig(store, configData) {
         const root = store.getState('root');
         if (!root || !configData || typeof configData !== 'object') return false;
@@ -300,6 +360,32 @@ export function initFilters(mainConfig) {
             success = true;
         }
 
+        if (settings.buildCantiereFilter !== false) {
+            const cantiereSelect = root.querySelector('#filterCantiere');
+            if (cantiereSelect) {
+                const currentValue = cantiereSelect.value;
+                const cantieri = extractCantieriFromConfig(configData);
+                const options = cantieri
+                    .filter(cantiere => cantiere && getCantiereDisplayName(cantiere))
+                    .map(cantiere => {
+                        const label = getCantiereDisplayName(cantiere);
+                        const identifier = getCantiereIdentifier(cantiere);
+                        return {
+                            value: label,
+                            text: label,
+                            dataAttr: identifier !== null && identifier !== undefined ? { name: 'data-cantiere-id', value: String(identifier) } : null
+                        };
+                    })
+                    .sort((a, b) => a.label.localeCompare(b.label));
+                buildSelectOptions(cantiereSelect, options, currentValue);
+                toggleFilterGroupVisibility('#filterCantiere', options.length, root);
+                if (options.length > 0) success = true;
+            }
+        } else {
+            const cantiereGroup = root.querySelector('#filterCantiere')?.closest('.filter-group');
+            if (cantiereGroup) cantiereGroup.classList.add('hidden');
+        }
+
         buildStatusFilter(store);
         toggleFilterGroupVisibility('#filterReparto', Array.isArray(configData.blocks) ? configData.blocks.length : 0, root);
         toggleFilterGroupVisibility('#filterMansione', Array.isArray(configData.tasks) ? configData.tasks.length : 0, root);
@@ -314,24 +400,54 @@ export function initFilters(mainConfig) {
         const filterConfigs = [
             { id: 'filterReparto', nameKey: 'department_name', idKey: 'department_id', dataAttribute: 'data-department-id' },
             { id: 'filterMansione', nameKey: 'task_name', idKey: 'task_id', dataAttribute: 'data-task-id' },
-            { id: 'filterType', nameKey: 'type_name', idKey: 'type', dataAttribute: 'data-type-id' }
+            { id: 'filterType', nameKey: 'type_name', idKey: 'type', dataAttribute: 'data-type-id' },
+            { id: 'filterCantiere', nameKey: null, idKey: null, dataAttribute: 'data-cantiere-id', isCantiere: true }
         ];
 
         filterConfigs.forEach(config => {
             const select = root.querySelector('#' + config.id);
             if (!select) return;
+            
+            if (config.isCantiere && settings.buildCantiereFilter === false) {
+                return;
+            }
+            
             const currentVal = select.value;
-            const uniqueItems = new Map();
-            requests.forEach(r => {
-                const name = r[config.nameKey];
-                const id = r[config.idKey];
-                if (name) uniqueItems.set(name, id);
-            });
-            const options = Array.from(uniqueItems.keys()).sort().map(name => ({
-                value: name,
-                text: name,
-                dataAttr: { name: config.dataAttribute, value: uniqueItems.get(name) }
-            }));
+            let options = [];
+            
+            if (config.isCantiere) {
+                const uniqueCantieri = new Map();
+                requests.forEach(r => {
+                    const label = getCantiereDisplayName(r);
+                    if (!label) return;
+                    const identifier = getCantiereIdentifier(r);
+                    if (!uniqueCantieri.has(label)) {
+                        uniqueCantieri.set(label, identifier);
+                    }
+                });
+                options = Array.from(uniqueCantieri.entries())
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([label, identifier]) => ({
+                        value: label,
+                        text: label,
+                        dataAttr: identifier !== null && identifier !== undefined ? { name: config.dataAttribute, value: String(identifier) } : null
+                    }));
+                const uniqueCantieriCount = uniqueCantieri.size;
+                toggleFilterGroupVisibility('#filterCantiere', uniqueCantieriCount, root);
+            } else {
+                const uniqueItems = new Map();
+                requests.forEach(r => {
+                    const name = r[config.nameKey];
+                    const id = r[config.idKey];
+                    if (name) uniqueItems.set(name, id);
+                });
+                options = Array.from(uniqueItems.keys()).sort().map(name => ({
+                    value: name,
+                    text: name,
+                    dataAttr: { name: config.dataAttribute, value: uniqueItems.get(name) }
+                }));
+            }
+            
             buildSelectOptions(select, options, currentVal);
         });
 
@@ -349,7 +465,7 @@ export function initFilters(mainConfig) {
 
     function setFiltersEnabled(store, enabled) {
         const root = store.getState('root');
-        const filterElements = ['filterSearch', 'filterType', 'filterStato', 'filterReparto', 'filterMansione', 'filterSort', 'filterReset'];
+        const filterElements = ['filterSearch', 'filterType', 'filterStato', 'filterReparto', 'filterMansione', 'filterCantiere', 'filterPostFestivo', 'filterSort', 'filterReset'];
         filterElements.forEach(elementId => {
             const element = root.querySelector('#' + elementId);
             if (element) element.disabled = !enabled;
@@ -438,12 +554,17 @@ export function initFilters(mainConfig) {
         const typeVal = root.querySelector('#filterType')?.value;
         const statoVal = root.querySelector('#filterStato')?.value;
         const repVal = root.querySelector('#filterReparto')?.value;
+        const cantiereVal = root.querySelector('#filterCantiere')?.value;
+        const postFestivoChecked = settings.buildPostFestivoFilter !== false ? 
+            root.querySelector('#filterPostFestivo')?.checked : false;
 
         const filtered = data.filter(item => {
             if (searchVal && !((item.nominativo || item.nome || '').toLowerCase().includes(searchVal))) return false;
             if (typeVal && (item.type_name || item.tipo_richiesta) !== typeVal) return false;
             if (statoVal && getStatusString(item.status) !== statoVal) return false;
             if (repVal && (item.department_name || item.reparto) !== repVal) return false;
+            if (cantiereVal && getCantiereDisplayName(item) !== cantiereVal) return false;
+            if (postFestivoChecked && !isPostFestivoItem(item)) return false;
             return true;
         });
 
@@ -492,12 +613,10 @@ export function initFilters(mainConfig) {
         if (root.querySelector('#filterSearch')?.value.trim()) return true;
         if (root.querySelector('#filterType')?.value) return true;
         if (root.querySelector('#filterStato')?.value) return true;
-        const repartoSelect = root.querySelector('#filterReparto');
-        const repartoFilterGroup = repartoSelect?.closest('.filter-group');
-        if (repartoSelect && repartoFilterGroup && !repartoFilterGroup.classList.contains('hidden') && repartoSelect.value) return true;
-        const mansioneSelect = root.querySelector('#filterMansione');
-        const mansioneFilterGroup = mansioneSelect?.closest('.filter-group');
-        if (mansioneSelect && mansioneFilterGroup && !mansioneFilterGroup.classList.contains('hidden') && mansioneSelect.value) return true;
+        if (root.querySelector('#filterReparto')?.value) return true;
+        if (root.querySelector('#filterMansione')?.value) return true;
+        if (settings.buildCantiereFilter !== false && root.querySelector('#filterCantiere')?.value) return true;
+        if (settings.buildPostFestivoFilter !== false && root.querySelector('#filterPostFestivo')?.checked) return true;
         const selectedPeriod = store.getState('selectedPeriod');
         if (selectedPeriod && selectedPeriod.startDate && selectedPeriod.endDate) return true;
         if (root.querySelector('#filterSort')?.value !== 'data-recente') return true;
@@ -549,18 +668,36 @@ export function initFilters(mainConfig) {
             activeFilters.push({ label: 'Stato', value: statoValue, remove: () => { root.querySelector('#filterStato').value = ''; handleFilterChange(store); } });
         }
 
-        if (isFilterGroupVisible('#filterReparto', root)) {
-            const repartoValue = root.querySelector('#filterReparto')?.value || '';
-            if (repartoValue) {
-                activeFilters.push({ label: 'Reparto', value: repartoValue, remove: () => { root.querySelector('#filterReparto').value = ''; handleFilterChange(store); } });
+        const repartoValue = root.querySelector('#filterReparto')?.value || '';
+        if (repartoValue) {
+            activeFilters.push({ label: 'Reparto', value: repartoValue, remove: () => { root.querySelector('#filterReparto').value = ''; handleFilterChange(store); } });
+        }
+
+        const mansioneValue = root.querySelector('#filterMansione')?.value || '';
+        if (mansioneValue) {
+            activeFilters.push({ label: 'Mansione', value: mansioneValue, remove: () => { root.querySelector('#filterMansione').value = ''; handleFilterChange(store); } });
+        }
+
+        if (settings.buildCantiereFilter !== false) {
+            const cantiereValue = root.querySelector('#filterCantiere')?.value || '';
+            if (cantiereValue) {
+                activeFilters.push({ label: 'Cantiere', value: cantiereValue, remove: () => { root.querySelector('#filterCantiere').value = ''; handleFilterChange(store); } });
             }
         }
 
-        if (isFilterGroupVisible('#filterMansione', root)) {
-            const mansioneValue = root.querySelector('#filterMansione')?.value || '';
-            if (mansioneValue) {
-                activeFilters.push({ label: 'Mansione', value: mansioneValue, remove: () => { root.querySelector('#filterMansione').value = ''; handleFilterChange(store); } });
-            }
+        if (settings.buildPostFestivoFilter !== false && root.querySelector('#filterPostFestivo')?.checked) {
+            activeFilters.push({
+                label: 'Post-Festivo',
+                value: 'Attivo',
+                remove: () => {
+                    const input = root.querySelector('#filterPostFestivo');
+                    if (input) {
+                        input.checked = false;
+                        input.setAttribute('aria-checked', 'false');
+                    }
+                    handleFilterChange(store);
+                }
+            });
         }
 
         const selectedPeriod = store.getState('selectedPeriod');
@@ -734,6 +871,13 @@ export function initFilters(mainConfig) {
         if (repartoSelect) repartoSelect.value = '';
         const mansioneSelect = root.querySelector('#filterMansione');
         if (mansioneSelect) mansioneSelect.value = '';
+        const cantiereSelect = root.querySelector('#filterCantiere');
+        if (cantiereSelect) cantiereSelect.value = '';
+        const postFestivoInput = root.querySelector('#filterPostFestivo');
+        if (postFestivoInput) {
+            postFestivoInput.checked = false;
+            postFestivoInput.setAttribute('aria-checked', 'false');
+        }
 
         const sortSelect = root.querySelector('#filterSort');
         if (sortSelect) sortSelect.value = 'data-recente';
@@ -767,6 +911,16 @@ export function initFilters(mainConfig) {
             { id: '#filterStato', event: 'onchange', handler: () => handleFilterChange(store) },
             { id: '#filterReparto', event: 'onchange', handler: () => handleFilterChange(store) },
             { id: '#filterMansione', event: 'onchange', handler: () => handleFilterChange(store) },
+            { id: '#filterCantiere', event: 'onchange', handler: () => handleFilterChange(store) },
+            {
+                id: '#filterPostFestivo',
+                event: 'onchange',
+                handler: () => {
+                    const input = root.querySelector('#filterPostFestivo');
+                    if (input) input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
+                    handleFilterChange(store);
+                }
+            },
             { id: '#filterSort', event: 'onchange', handler: () => handleFilterChange(store) },
             { id: '#filterReset', event: 'onclick', handler: () => clearAllFilters(store, configEndpoint) }
         ];
@@ -786,6 +940,28 @@ export function initFilters(mainConfig) {
     if (!verifyFilterBarStructure(store)) {
         console.error('Struttura filter bar non trovata nel DOM');
         return;
+    }
+
+    const cantiereGroup = root.querySelector('#filterCantiere')?.closest('.filter-group');
+    if (cantiereGroup) {
+        if (settings.buildCantiereFilter === false) {
+            cantiereGroup.classList.add('hidden');
+        } else {
+            cantiereGroup.classList.remove('hidden');
+        }
+    }
+
+    const postFestivoInput = root.querySelector('#filterPostFestivo');
+    const postFestivoGroup = postFestivoInput ? postFestivoInput.closest('.filter-group') : null;
+    if (postFestivoGroup) {
+        if (settings.buildPostFestivoFilter === false) {
+            postFestivoGroup.classList.add('hidden');
+        } else {
+            postFestivoGroup.classList.remove('hidden');
+        }
+    }
+    if (postFestivoInput) {
+        postFestivoInput.setAttribute('aria-checked', postFestivoInput.checked ? 'true' : 'false');
     }
 
     store.setState('handleFilterChange', handleFilterChange);

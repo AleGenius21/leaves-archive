@@ -16,6 +16,28 @@
                                     <input type="text" class="form-control border-start-0" id="filterSearch" placeholder="Cerca dipendente..." aria-label="Cerca dipendente" />
                                 </div>
                             </div>
+
+							<!-- Filtro Cantiere -->
+							<div class="filter-group">
+								<label class="filter-label" for="filterCantiere">Cantiere:</label>
+								<select class="form-select form-select-sm" id="filterCantiere" aria-label="Filtra per cantiere">
+									<option value="">Tutti</option>
+									<!-- Opzioni verranno aggiunte dinamicamente via JS -->
+								</select>
+							</div>
+
+							<!-- Filtro Post-Festivo (toggle) -->
+							<div class="filter-group filter-group-toggle">
+								<label class="filter-label" for="filterPostFestivo">Post-Festivo:</label>
+								<label class="toggle-switch" aria-label="Filtra per post-festivo">
+									<input type="checkbox" class="toggle-switch-input" id="filterPostFestivo" value="si" role="switch" aria-checked="false">
+									<span class="toggle-switch-track">
+										<span class="toggle-switch-thumb"></span>
+									</span>
+								</label>
+							</div>
+
+
                             <div class="filter-group">
                                 <label class="filter-label" for="filterType">Tipo:</label>
                                 <select class="form-select form-select-sm" id="filterType" aria-label="Filtra per tipologia">
@@ -156,7 +178,9 @@
                 api: store.getState('api'),
                 settings: {
                     endpoint: '/leave_admin_screen_config',
-                    buildStatusFilter: false,
+                    buildStatusFilter: true,
+                    buildCantiereFilter: false,
+                    buildPostFestivoFilter: false,
                     defaultStatus: [1, 2] 
                 }
             });

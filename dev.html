@@ -108,23 +108,19 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
 
-    <script src="js/api.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/store.js"></script>
+    <script type="module">
+        import { hrStore } from './js/store.js';
+        import { initLeavesArchive } from './js/main.js';
+        import { initFilters } from './components/filters/filters.js';
+        import { initCalendars } from './components/calendars/calendars.js';
+        import { initApprovalRow } from './components/approval-row/approval-row.js';
 
-    <script src="components/approval-row/approval-row.js"></script>
-    <script src="components/filters/filters.js"></script>
-    <script src="components/calendars/calendars.js"></script>
-    <script src="js/main.js"></script>
-
-    <script>
-
-		function initWidget() {
-			// Definire container nel quale inserirsi
+        async function initWidget() {
+            // Definire container nel quale inserirsi
             const container = document.getElementById('widget-container');
             if (!container) return console.error("Container mancante");
 
-			const store = hrStore();
+            const store = hrStore();
 
             initLeavesArchive(container, store);
 
@@ -142,9 +138,9 @@
 
             initApprovalRow({ store: store });
 
-            console.log("Widget avviato in modo sincrono");
+            console.log("Widget avviato in modo sincrono (modulo)");
         }
 
-		initWidget();
+        initWidget();
     </script>
 </div>

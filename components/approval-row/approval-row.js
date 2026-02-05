@@ -1,24 +1,35 @@
+import {
+    formatDateDDMMYY,
+    formatDayDDMMYY,
+    formatTimeToHHMM,
+    formatDateItalian,
+    normalizeQuantity,
+    parseColorToRgb,
+    getRelativeLuminance,
+    getTextColorForBackground
+} from '../../js/utils.js';
+
 /* components/approval-row/approval-row.js */
-const initApprovalRow = (config) => {
+export const initApprovalRow = (config) => {
     // Estrai le dipendenze da config
     const { store } = config;
 
-    function formatDateDDMMYY(dateString) { return LeavesUtils.formatDateDDMMYY(dateString); }
-    function formatDayDDMMYY(dateString) { return LeavesUtils.formatDayDDMMYY(dateString); }
-    function formatTimeToHHMM(timeString) { return LeavesUtils.formatTimeToHHMM(timeString); }
-    function formatDateItalian(dateString) { return LeavesUtils.formatDateItalian(dateString); }
-    function normalizeQuantity(value, unit) { return LeavesUtils.normalizeQuantity(value, unit); }
-    function parseColorToRgb(color, root) { return LeavesUtils.parseColorToRgb(color, root); }
-    function getRelativeLuminance(color, root) { return LeavesUtils.getRelativeLuminance(color, root); }
+    function _formatDateDDMMYY(dateString) { return formatDateDDMMYY(dateString); }
+    function _formatDayDDMMYY(dateString) { return formatDayDDMMYY(dateString); }
+    function _formatTimeToHHMM(timeString) { return formatTimeToHHMM(timeString); }
+    function _formatDateItalian(dateString) { return formatDateItalian(dateString); }
+    function _normalizeQuantity(value, unit) { return normalizeQuantity(value, unit); }
+    function _parseColorToRgb(color, root) { return parseColorToRgb(color, root); }
+    function _getRelativeLuminance(color, root) { return getRelativeLuminance(color, root); }
     function applyDepartmentBadgeStyle(badgeElement, departmentColor, root) {
         if (!badgeElement || !departmentColor) return;
         badgeElement.style.backgroundColor = departmentColor;
-        badgeElement.style.color = LeavesUtils.getTextColorForBackground(departmentColor, root);
+        badgeElement.style.color = getTextColorForBackground(departmentColor, root);
     }
     function applyTaskBadgeStyle(badgeElement, taskColor, root) {
         if (!badgeElement || !taskColor) return;
         badgeElement.style.backgroundColor = taskColor;
-        badgeElement.style.color = LeavesUtils.getTextColorForBackground(taskColor, root);
+        badgeElement.style.color = getTextColorForBackground(taskColor, root);
     }
 
     function extractQuantityFromMoorea(data) {
@@ -28,15 +39,15 @@ const initApprovalRow = (config) => {
             const isPermesso = typeValue === 2 || data.type_name === 'Permessi' || data.type_name === 'PERMESSO';
 
             if (isPermesso && typeof meta.hours === 'number') {
-                const normalizedHours = LeavesUtils.normalizeQuantity(meta.hours, 'hours');
+                const normalizedHours = normalizeQuantity(meta.hours, 'hours');
                 return normalizedHours + 'h';
             } else if (!isPermesso && typeof meta.days === 'number') {
-                const normalizedDays = LeavesUtils.normalizeQuantity(meta.days, 'days');
+                const normalizedDays = normalizeQuantity(meta.days, 'days');
                 return normalizedDays + 'g';
             }
         }
         if (typeof data.ore === 'number' && data.ore > 0) {
-            const normalizedHours = LeavesUtils.normalizeQuantity(data.ore, 'hours');
+            const normalizedHours = normalizeQuantity(data.ore, 'hours');
             return normalizedHours + 'h';
         }
         return '';
@@ -51,13 +62,13 @@ const initApprovalRow = (config) => {
             let timeText = null;
 
             if (isPermesso) {
-                dateText = LeavesUtils.formatDateItalian(data.dataInizio);
+                dateText = formatDateItalian(data.dataInizio);
                 const giornataIntera = data.giornataIntera === 1 || data.giornataIntera === true;
 
                 if (!giornataIntera) {
                     if (data.oraInizio && data.oraFine) {
                         if (typeof data.oraInizio === 'string' && typeof data.oraFine === 'string') {
-                            timeText = `${LeavesUtils.formatTimeToHHMM(data.oraInizio)} - ${LeavesUtils.formatTimeToHHMM(data.oraFine)}`;
+                            timeText = `${formatTimeToHHMM(data.oraInizio)} - ${formatTimeToHHMM(data.oraFine)}`;
                         } else if (typeof data.oraInizio === 'number' && typeof data.oraFine === 'number') {
                             const hoursInizio = Math.floor(data.oraInizio / 60);
                             const minsInizio = data.oraInizio % 60;
@@ -71,9 +82,9 @@ const initApprovalRow = (config) => {
                 }
             } else {
                 if (data.dataFine && data.dataFine !== data.dataInizio) {
-                    dateText = 'Da ' + LeavesUtils.formatDateItalian(data.dataInizio) + ' a ' + LeavesUtils.formatDateItalian(data.dataFine);
+                    dateText = 'Da ' + formatDateItalian(data.dataInizio) + ' a ' + formatDateItalian(data.dataFine);
                 } else {
-                    dateText = LeavesUtils.formatDateItalian(data.dataInizio);
+                    dateText = formatDateItalian(data.dataInizio);
                 }
             }
 
@@ -97,7 +108,7 @@ const initApprovalRow = (config) => {
             let timeText = null;
 
             if (isPermesso) {
-                dateText = LeavesUtils.formatDateItalian(firstDate);
+                dateText = formatDateItalian(firstDate);
                 const giornataIntera = (firstLeave.interaGiornata === 1) || (data.giornataIntera === 1 || data.giornataIntera === true);
 
                 if (!giornataIntera) {
@@ -105,14 +116,14 @@ const initApprovalRow = (config) => {
                     const orarioFine = firstLeave.orarioFine || firstLeave.timeFine || firstLeave.orario_fine;
 
                     if (orarioInizio && orarioFine) {
-                        timeText = `${LeavesUtils.formatTimeToHHMM(orarioInizio)} - ${LeavesUtils.formatTimeToHHMM(orarioFine)}`;
+                        timeText = `${formatTimeToHHMM(orarioInizio)} - ${formatTimeToHHMM(orarioFine)}`;
                     }
                 }
             } else {
                 if (firstDate === lastDate || sortedLeaves.length === 1) {
-                    dateText = LeavesUtils.formatDateItalian(firstDate);
+                    dateText = formatDateItalian(firstDate);
                 } else {
-                    dateText = 'Da ' + LeavesUtils.formatDateItalian(firstDate) + ' a ' + LeavesUtils.formatDateItalian(lastDate);
+                    dateText = 'Da ' + formatDateItalian(firstDate) + ' a ' + formatDateItalian(lastDate);
                 }
             }
 
@@ -123,7 +134,7 @@ const initApprovalRow = (config) => {
         let timeText = null;
 
         if (isPermesso && data.orario_inizio && data.orario_fine) {
-            timeText = `${LeavesUtils.formatTimeToHHMM(data.orario_inizio)} - ${LeavesUtils.formatTimeToHHMM(data.orario_fine)}`;
+            timeText = `${formatTimeToHHMM(data.orario_inizio)} - ${formatTimeToHHMM(data.orario_fine)}`;
         }
 
         return { dateText, timeText };

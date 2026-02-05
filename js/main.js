@@ -1,6 +1,4 @@
-'use strict';
-
-function initLeavesArchive(containerElement, store) {
+export function initLeavesArchive(containerElement, store) {
     if (!containerElement) {
         console.error('initLeavesArchive: containerElement è obbligatorio');
         return;

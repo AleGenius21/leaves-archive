@@ -1,7 +1,9 @@
 'use strict';
 
-function hrStore() {
-    const api = createApi();
+import { getFilterConfig, getLeavesData } from './api.js';
+
+export function hrStore() {
+    const api = { getFilterConfig, getLeavesData };
     const state = {
         api: api,
         selectedPeriod: null,

@@ -1,10 +1,10 @@
-'use strict';
+import { formatDateISO, formatDateDDMMYYYY } from '../../js/utils.js';
 
 /**
  * Filters Component - Modulo filtri isolato e configurabile
  * initFilters(mainConfig) con mainConfig: { store, api, settings: { endpoint, type } }
  */
-function initFilters(mainConfig) {
+export function initFilters(mainConfig) {
     // Extract dependencies from config
     const store = mainConfig.store;
     const api = mainConfig.api;
@@ -33,20 +33,20 @@ function initFilters(mainConfig) {
         buildStatusFilter: true
     };
 
-	// Configurazioni specifiche per tipologia, con possibilità di disabilitare filtri o funzionalità
+    // Configurazioni specifiche per tipologia, con possibilità di disabilitare filtri o funzionalità
     const TYPE_CONFIGS = {
         'ferie_permessi': {
             filters: {
                 search: { enabled: true, id: 'filterSearch', label: 'Ricerca' },
                 type: { enabled: true, id: 'filterType', label: 'Tipo' },
-                status: { enabled: false, id: 'filterStato', label: 'Stato' }, 
+                status: { enabled: false, id: 'filterStato', label: 'Stato' },
                 department: { enabled: true, id: 'filterReparto', label: 'Reparto' },
                 task: { enabled: true, id: 'filterMansione', label: 'Mansione' },
                 sort: { enabled: true, id: 'filterSort', label: 'Ordina' },
                 reset: { enabled: true, id: 'filterReset', label: 'Resetta filtri' }
             },
             configDataMapping: { types: 'types', blocks: 'blocks', tasks: 'tasks' },
-            buildStatusFilter: false 
+            buildStatusFilter: false
         },
         'archivio': DEFAULT_TYPE_CONFIG,
         'assenze': DEFAULT_TYPE_CONFIG,
@@ -102,7 +102,7 @@ function initFilters(mainConfig) {
     }
 
     function formatDate(date) {
-        return LeavesUtils.formatDateISO(date);
+        return formatDateISO(date);
     }
 
     function buildApiParams(store) {
@@ -536,7 +536,7 @@ function initFilters(mainConfig) {
     }
 
     function formatDateForDisplay(date) {
-        return LeavesUtils.formatDateDDMMYYYY(date);
+        return formatDateDDMMYYYY(date);
     }
 
     function isFilterGroupVisible(selectId, root) {

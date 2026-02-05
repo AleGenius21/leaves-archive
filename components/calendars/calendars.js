@@ -1,5 +1,5 @@
 /* components/calendars/calendars.js */
-const initCalendars = (config) => {
+export const initCalendars = (config) => {
     const { store, root, selectors } = config;
 
     function loadPanelContent(store) {

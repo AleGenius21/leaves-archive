@@ -101,9 +101,7 @@ export function initFilters(mainConfig) {
         return option ? option.getAttribute(attrName) : null;
     }
 
-    function formatDate(date) {
-        return formatDateISO(date);
-    }
+
 
     function buildApiParams(store) {
         const root = store.getState('root');
@@ -173,8 +171,8 @@ export function initFilters(mainConfig) {
 
         const selectedPeriod = store.getState('selectedPeriod');
         if (selectedPeriod && selectedPeriod.startDate && selectedPeriod.endDate) {
-            params.data_inizio = formatDate(new Date(selectedPeriod.startDate));
-            params.data_fine = formatDate(new Date(selectedPeriod.endDate));
+            params.data_inizio = formatDateISO(new Date(selectedPeriod.startDate));
+            params.data_fine = formatDateISO(new Date(selectedPeriod.endDate));
         }
 
         const sortValue = getSelectValue('#filterSort', root);
@@ -535,9 +533,7 @@ export function initFilters(mainConfig) {
         return false;
     }
 
-    function formatDateForDisplay(date) {
-        return formatDateDDMMYYYY(date);
-    }
+
 
     function isFilterGroupVisible(selectId, root) {
         const select = root.querySelector(selectId);
@@ -600,7 +596,7 @@ export function initFilters(mainConfig) {
         if (selectedPeriod && selectedPeriod.startDate && selectedPeriod.endDate) {
             activeFilters.push({
                 label: 'Periodo',
-                value: `${formatDateForDisplay(selectedPeriod.startDate)} al ${formatDateForDisplay(selectedPeriod.endDate)}`,
+                value: `${formatDateDDMMYYYY(selectedPeriod.startDate)} al ${formatDateDDMMYYYY(selectedPeriod.endDate)}`,
                 remove: () => {
                     const clearPeriodSelection = store.getState('clearPeriodSelection');
                     if (clearPeriodSelection) clearPeriodSelection(store);

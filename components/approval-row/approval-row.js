@@ -14,13 +14,7 @@ export const initApprovalRow = (config) => {
     // Estrai le dipendenze da config
     const { store } = config;
 
-    function _formatDateDDMMYY(dateString) { return formatDateDDMMYY(dateString); }
-    function _formatDayDDMMYY(dateString) { return formatDayDDMMYY(dateString); }
-    function _formatTimeToHHMM(timeString) { return formatTimeToHHMM(timeString); }
-    function _formatDateItalian(dateString) { return formatDateItalian(dateString); }
-    function _normalizeQuantity(value, unit) { return normalizeQuantity(value, unit); }
-    function _parseColorToRgb(color, root) { return parseColorToRgb(color, root); }
-    function _getRelativeLuminance(color, root) { return getRelativeLuminance(color, root); }
+
     function applyDepartmentBadgeStyle(badgeElement, departmentColor, root) {
         if (!badgeElement || !departmentColor) return;
         badgeElement.style.backgroundColor = departmentColor;
@@ -386,18 +380,7 @@ export const initApprovalRow = (config) => {
     }
 
     const api = {
-        createApprovalRow: createApprovalRow,
-        formatDateDDMMYY: formatDateDDMMYY,
-        formatDayDDMMYY: formatDayDDMMYY,
-        formatTimeToHHMM: formatTimeToHHMM,
-        formatDateItalian: formatDateItalian,
-        normalizeQuantity: normalizeQuantity,
-        extractQuantityFromMoorea: extractQuantityFromMoorea,
-        extractDateInfoFromMoorea: extractDateInfoFromMoorea,
-        parseColorToRgb: parseColorToRgb,
-        getRelativeLuminance: getRelativeLuminance,
-        applyDepartmentBadgeStyle: applyDepartmentBadgeStyle,
-        applyTaskBadgeStyle: applyTaskBadgeStyle
+        createApprovalRow: createApprovalRow
     };
 
     store.setState('approvalRow', api);

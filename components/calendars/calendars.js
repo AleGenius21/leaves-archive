@@ -572,15 +572,6 @@ export const initCalendars = (config) => {
         }
     }
 
-    function applyDefaultTodaySelection(store) {
-        if (store.getState('defaultDateApplied')) return;
-        store.setState('defaultDateApplied', true);
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        applyPeriodFilter(store, today, today);
-    }
-
     async function applyTodaySelection(store) {
         clearPresetActiveState(store);
         const today = new Date();
@@ -997,7 +988,11 @@ export const initCalendars = (config) => {
 
             setupYearPicker(store);
             renderCalendar(store);
-            applyDefaultTodaySelection(store);
+
+            if (!store.getState('defaultDateApplied')) {
+                store.setState('defaultDateApplied', true);
+                await applyTodaySelection(store);
+            }
         } catch (err) {
             console.error('Detail panel init:', err);
         }

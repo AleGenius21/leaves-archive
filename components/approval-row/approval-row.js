@@ -4,8 +4,6 @@ import {
     formatTimeToHHMM,
     formatDateItalian,
     normalizeQuantity,
-    parseColorToRgb,
-    getRelativeLuminance,
     getTextColorForBackground
 } from '../../js/utils.js';
 

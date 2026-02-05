@@ -33,19 +33,20 @@ function initFilters(mainConfig) {
         buildStatusFilter: true
     };
 
+	// Configurazioni specifiche per tipologia, con possibilità di disabilitare filtri o funzionalità
     const TYPE_CONFIGS = {
         'ferie_permessi': {
             filters: {
                 search: { enabled: true, id: 'filterSearch', label: 'Ricerca' },
                 type: { enabled: true, id: 'filterType', label: 'Tipo' },
-                status: { enabled: false, id: 'filterStato', label: 'Stato' },  // ← CAMBIATO: false invece di true
+                status: { enabled: false, id: 'filterStato', label: 'Stato' }, 
                 department: { enabled: true, id: 'filterReparto', label: 'Reparto' },
                 task: { enabled: true, id: 'filterMansione', label: 'Mansione' },
                 sort: { enabled: true, id: 'filterSort', label: 'Ordina' },
                 reset: { enabled: true, id: 'filterReset', label: 'Resetta filtri' }
             },
             configDataMapping: { types: 'types', blocks: 'blocks', tasks: 'tasks' },
-            buildStatusFilter: false  // ← CAMBIATO: false invece di true
+            buildStatusFilter: false 
         },
         'archivio': DEFAULT_TYPE_CONFIG,
         'assenze': DEFAULT_TYPE_CONFIG,

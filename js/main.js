@@ -6,13 +6,13 @@ function initLeavesArchive(containerElement, store) {
         return;
     }
 
-    // Crea il DOM dal template literal (come in BuyInCloud)
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = store.template.trim();
-    const rootElement = tempDiv.firstElementChild;
+    // Cerca l'elemento root esistente nel container
+    const rootElement = containerElement.querySelector('#leaves-archive-root');
 
-    // Inserisce il root nel container
-    containerElement.appendChild(rootElement);
+    if (!rootElement) {
+        console.error('initLeavesArchive: elemento #leaves-archive-root non trovato nel container');
+        return;
+    }
 
     store.setState('root', rootElement);
 }

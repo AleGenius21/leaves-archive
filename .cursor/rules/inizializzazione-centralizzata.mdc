@@ -1,0 +1,45 @@
+---
+description: Regola per centralizzare tutte le chiamate di inizializzazione
+alwaysApply: true
+---
+
+# Inizializzazione Centralizzata
+
+Tutte le funzioni di inizializzazione (`init*`, `*.init()`) devono essere chiamate in un unico punto centrale del progetto (es. `dev.html` nella funzione `initWidget`).
+
+## Regole
+
+✅ **DO**: Chiamare tutte le funzioni `init` nel punto centrale di inizializzazione
+✅ **DO**: Passare i parametri corretti (store, config, ecc.) alle funzioni init
+✅ **DO**: Verificare che le dipendenze siano disponibili prima di chiamare init
+
+❌ **DON'T**: Chiamare funzioni `init` dentro altri moduli o funzioni di setup
+❌ **DON'T**: Inizializzare componenti dentro le loro definizioni
+❌ **DON'T**: Spargere chiamate init in più file
+
+## Pattern
+
+```javascript
+function initWidget() {
+    // 1. Inizializza store/base
+    initStore();
+    
+    // 2. Inizializza componente principale (restituisce store)
+    const store = initMainComponent(container);
+    
+    // 3. Inizializza tutti i componenti usando lo store
+    const component1 = store.getState('component1');
+    if (component1 && component1.init) {
+        component1.init(store);
+    }
+    
+    initOtherComponent(store, config);
+}
+```
+
+## Motivazione
+
+- **Controllo centralizzato**: Tutte le inizializzazioni in un unico punto
+- **Ordine garantito**: Le dipendenze vengono inizializzate nell'ordine corretto
+- **Debug facilitato**: Più facile tracciare problemi di inizializzazione
+- **Manutenibilità**: Modifiche all'ordine di inizializzazione in un solo punto

@@ -1,0 +1,36 @@
+---
+description: 
+alwaysApply: true
+---
+
+Considera sempre che devo inserirmi in una container che verrà riempito e svuotato a seconda del widget chiamato in una SPA in wordpress (HTML, CSS, JS)  
+NON DEVO FARE CODICE PHP.
+
+Usa sempre queste regole:
+- non usare variabili globali, usa lo STORE
+- usa codice semplice, leggibile e mantenibile
+- non dichiarare ne usare variabili in "window"
+- usa fontawesome per icone
+- usare template literas e appendi codice tramite JS quando devi aggiungere template HTML
+- Usa async/await con cautela
+- Le funzioni e variabili devono avere nomi evocativi e chiari
+- È vietato l’uso di DOMContentLoaded, window.onload, document.addEventListener e variabili globali.
+Usa esclusivamente una IIFE per isolare lo scope.
+
+
+Vincoli:
+❌ niente <html> <head> <body>
+
+❌ niente variabili globali
+
+❌ niente listener manuali (addEventListener)
+
+❌ niente REM / CSS globali -> usa Pixels
+
+❌ niente mount / unmount
+
+❌ niente codice duplicato o ridondante
+
+❌ no overengineering
+
+✅ HTML + CSS + JS puri

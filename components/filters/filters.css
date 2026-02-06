@@ -1,15 +1,17 @@
 /* Filter Bar Container */
-.filter-bar-container {
+#leaves-archive-root .filter-bar-container {
     background-color: #ffffff;
     border-bottom: 0px solid #e0e0e0;
     padding: 8.8px 12px;
     margin-bottom: 0;
 	z-index: 100;
 	box-shadow: rgba(133, 133, 133, 0.2) 0px 5px 8px -2px;
+	position: relative;
+	transition: opacity 0.3s ease;
 }
 
 /* Filter Bar */
-.filter-bar {
+#leaves-archive-root .filter-bar {
     display: flex;
     align-items: center;
     gap: 8.8px;
@@ -18,76 +20,79 @@
 }
 
 /* Filter Group */
-.filter-group {
+#leaves-archive-root .filter-group {
     display: flex;
     align-items: center;
     gap: 6.6px;
 }
 
 /* Filter Group Hidden */
-.filter-group.hidden {
+#leaves-archive-root .filter-group.hidden {
     display: none;
 }
 
 /* Filter Label */
-.filter-label {
-    font-size: 0.833rem; /* 11px */
+#leaves-archive-root .filter-label {
+    font-size: 8px;
     color: #666666;
     font-weight: 500;
     white-space: nowrap;
     margin: 0;
     line-height: 1.4;
+	transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Input Group Styling */
-.filter-group .input-group {
+#leaves-archive-root .filter-group .input-group {
     min-width: 198px;
 }
 
-.filter-group .input-group-text {
+#leaves-archive-root .filter-group .input-group-text {
     border: 1px solid #d0d0d0;
     border-radius: 3.3px 0 0 3.3px;
     padding: 4.4px 8.8px;
-    font-size: 0.833rem; /* 11px */
+    font-size: 8px;
     color: #666666;
+	transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
-.filter-group .form-control,
-.filter-group .form-select {
+#leaves-archive-root .filter-group .form-control,
+#leaves-archive-root .filter-group .form-select {
     border: 1px solid #d0d0d0;
     border-radius: 3.3px;
     padding: 4.4px 8.8px;
-    font-size: 0.833rem; /* 11px */
+    font-size: 8px;
     color: #000000;
     background-color: #ffffff;
     min-width: 154px;
+	transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Stile per le opzioni dei dropdown */
-.filter-group .form-select option {
-    font-size: 0.856rem; /* 11.3px */
+#leaves-archive-root .filter-group .form-select option {
+    font-size: 9px;
     padding: 4.4px 8.8px;
 }
 
-.filter-group .form-control:focus,
-.filter-group .form-select:focus {
+#leaves-archive-root .filter-group .form-control:focus,
+#leaves-archive-root .filter-group .form-select:focus {
     border-color: #808080;
     outline: none;
     box-shadow: 0 0 0 2.2px rgba(128, 128, 128, 0.1);
 }
 
-.filter-group .form-control.border-start-0 {
+#leaves-archive-root .filter-group .form-control.border-start-0 {
     border-left: none;
     border-radius: 0 3.3px 3.3px 0;
 }
 
 /* Reset Button */
-.btn-reset-filters {
+#leaves-archive-root .btn-reset-filters {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 4.4px;
-    font-size: 1.05rem; /* 11px */
+    font-size: 11px;
     font-weight: 500;
     color: #666666;
     background-color: #ffffff;
@@ -100,65 +105,53 @@
     min-height: 28px;
 }
 
-.btn-reset-filters:hover:not(:disabled) {
+#leaves-archive-root .btn-reset-filters:hover:not(:disabled) {
     background-color: #f5f5f5;
     border-color: #808080;
     color: #000000;
 }
 
-.btn-reset-filters:active:not(:disabled) {
+#leaves-archive-root .btn-reset-filters:active:not(:disabled) {
     background-color: #f0f0f0;
     border-color: #444444;
 }
 
-.btn-reset-filters:disabled {
+#leaves-archive-root .btn-reset-filters:disabled {
     opacity: 0.4;
     cursor: not-allowed;
     background-color: #fafafa;
 }
 
+#leaves-archive-root .btn-reset-filters i {
+    font-size: 9px;
+    line-height: 1;
+}
+
 /* Stili per filtri disabilitati */
-.filter-bar-container.filters-disabled {
+#leaves-archive-root .filter-bar-container.filters-disabled {
     opacity: 0.65;
 }
 
-.filter-bar-container.filters-disabled .filter-group .form-control:disabled,
-.filter-bar-container.filters-disabled .filter-group .form-select:disabled {
+#leaves-archive-root .filter-bar-container.filters-disabled .filter-group .form-control:disabled,
+#leaves-archive-root .filter-bar-container.filters-disabled .filter-group .form-select:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     background-color: #f5f5f5;
     color: #999999;
 }
 
-.filter-bar-container.filters-disabled .filter-group .input-group-text {
+#leaves-archive-root .filter-bar-container.filters-disabled .filter-group .input-group-text {
     opacity: 0.6;
     background-color: #f5f5f5;
 }
 
-.filter-bar-container.filters-disabled .filter-label {
+#leaves-archive-root .filter-bar-container.filters-disabled .filter-label {
     opacity: 0.6;
     color: #999999;
 }
 
-/* Transizioni smooth per l'attivazione/disattivazione */
-.filter-bar-container {
-    transition: opacity 0.3s ease;
-}
-
-.filter-bar-container .filter-group .form-control,
-.filter-bar-container .filter-group .form-select,
-.filter-bar-container .filter-group .input-group-text,
-.filter-bar-container .filter-label {
-    transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
-}
-
-.btn-reset-filters i {
-    font-size: 0.85rem;
-    line-height: 1;
-}
-
 /* Active Filters Container */
-.active-filters-container {
+#leaves-archive-root .active-filters-container {
     display: flex;
     flex-wrap: wrap;
     gap: 6.6px;
@@ -167,7 +160,7 @@
 }
 
 /* Active Filter Chip */
-.filter-chip {
+#leaves-archive-root .filter-chip {
     display: inline-flex;
     align-items: center;
     gap: 4.4px;
@@ -175,20 +168,20 @@
     background-color: #f5f5f5;
     border: 1px solid #d0d0d0;
     border-radius: 3.3px;
-    font-size: 1.07rem; /* ~13px - aumentato leggermente */
+    font-size: 11px;
     color: #333333;
     line-height: 1.4;
 }
 
-.filter-chip-label {
+#leaves-archive-root .filter-chip-label {
     font-weight: 500;
 }
 
-.filter-chip-value {
+#leaves-archive-root .filter-chip-value {
     color: #000000;
 }
 
-.filter-chip-remove {
+#leaves-archive-root .filter-chip-remove {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -200,26 +193,26 @@
     color: #666666;
     cursor: pointer;
     padding: 0;
-    font-size: 1.2rem; /* 11px */
+    font-size: 12px;
     line-height: 1;
     transition: color 0.2s ease;
 }
 
-.filter-chip-remove:hover {
+#leaves-archive-root .filter-chip-remove:hover {
     color: #000000;
 }
 
-.filter-chip-remove i {
-    font-size: 0.833rem; /* 11px */
+#leaves-archive-root .filter-chip-remove i {
+    font-size: 8px;
 }
 
 /* Periodo Filter */
-.filter-group #filterPeriodo {
+#leaves-archive-root .filter-group #filterPeriodo {
     cursor: pointer;
 }
 
 /* Periodo Presets Container - sopra il calendario Flatpickr */
-.periodo-presets-container {
+#leaves-archive-root .periodo-presets-container {
     display: flex;
     gap: 8px;
     padding: 12px;
@@ -228,10 +221,10 @@
     box-sizing: border-box;
 }
 
-.periodo-presets-container .preset-btn {
+#leaves-archive-root .periodo-presets-container .preset-btn {
     flex: 1;
     padding: 1px 3px;
-    font-size: 0.85rem;
+    font-size: 9px;
     color: #000000;
     background-color: #ffffff;
     border: 1px solid #d0d0d0;
@@ -240,21 +233,24 @@
     text-align: center;
     white-space: nowrap;
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    min-width: 0; /* Permette al flex di restringere se necessario */
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.periodo-presets-container .preset-btn:hover {
+#leaves-archive-root .periodo-presets-container .preset-btn:hover {
     background-color: #f5f5f5;
     border-color: #808080;
 }
 
-.periodo-presets-container .preset-btn:active {
+#leaves-archive-root .periodo-presets-container .preset-btn:active {
     background-color: #e0e0e0;
 }
 
 /* Flatpickr customization - dimensioni moderne e leggibili */
+/* Nota: Flatpickr genera elementi DOM fuori dal widget, quindi alcuni selettori potrebbero non funzionare perfettamente */
+/* Tuttavia, scopiamo comunque per garantire isolamento completo */
+#leaves-archive-root .flatpickr-calendar,
 .flatpickr-calendar {
     font-size: 14px !important;
     width: 380px !important;
@@ -265,6 +261,7 @@
 }
 
 /* Aumenta dimensione font per le date */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day,
 .flatpickr-calendar .flatpickr-day {
     font-size: 14px !important;
     font-weight: 400;
@@ -274,6 +271,7 @@
 }
 
 /* Header del calendario più grande */
+#leaves-archive-root .flatpickr-calendar .flatpickr-month,
 .flatpickr-calendar .flatpickr-month {
     height: 48px;
     line-height: 48px;
@@ -282,6 +280,7 @@
     justify-content: center;
 }
 
+#leaves-archive-root .flatpickr-calendar .flatpickr-current-month,
 .flatpickr-calendar .flatpickr-current-month {
     font-size: 15px !important;
     font-weight: 600;
@@ -291,11 +290,15 @@
 	gap: 8px;
 }
 
+#leaves-archive-root .flatpickr-current-month .numInputWrapper,
 .flatpickr-current-month .numInputWrapper {
 	width: 55px !important;
 }
 
 /* Stile specifico per l'anno nella vista mensile - ingrandito e più marcato */
+#leaves-archive-root .flatpickr-calendar .flatpickr-current-month .cur-year,
+#leaves-archive-root .flatpickr-calendar .flatpickr-current-month .year-display,
+#leaves-archive-root .flatpickr-calendar .flatpickr-current-month span.year-display,
 .flatpickr-calendar .flatpickr-current-month .cur-year,
 .flatpickr-calendar .flatpickr-current-month .year-display,
 .flatpickr-calendar .flatpickr-current-month span.year-display {
@@ -308,6 +311,7 @@
 }
 
 /* Assicura che il container del mese abbia un layout flessibile per distribuire spazio */
+#leaves-archive-root .flatpickr-calendar .flatpickr-month,
 .flatpickr-calendar .flatpickr-month {
 	display: flex !important;
 	align-items: center !important;
@@ -315,6 +319,7 @@
 	gap: 8px !important;
 }
 
+#leaves-archive-root .flatpickr-calendar .flatpickr-innerContainer,
 .flatpickr-calendar .flatpickr-innerContainer {
 	display: flex;
 	justify-content: center;
@@ -322,6 +327,8 @@
 }
 
 /* Allinea le frecce di navigazione allo stesso livello del mese */
+#leaves-archive-root .flatpickr-calendar .flatpickr-prev-month,
+#leaves-archive-root .flatpickr-calendar .flatpickr-next-month,
 .flatpickr-calendar .flatpickr-prev-month,
 .flatpickr-calendar .flatpickr-next-month {
     position: absolute !important;
@@ -336,15 +343,18 @@
     margin: 0 !important;
 }
 
+#leaves-archive-root .flatpickr-calendar .flatpickr-prev-month,
 .flatpickr-calendar .flatpickr-prev-month {
     left: 0 !important;
 }
 
+#leaves-archive-root .flatpickr-calendar .flatpickr-next-month,
 .flatpickr-calendar .flatpickr-next-month {
     right: 0 !important;
 }
 
 /* Assicura che il container del mese allinei correttamente tutto */
+#leaves-archive-root .flatpickr-calendar .flatpickr-months,
 .flatpickr-calendar .flatpickr-months {
     display: flex !important;
     align-items: center !important;
@@ -353,6 +363,7 @@
     padding: 0 !important;
 }
 
+#leaves-archive-root .flatpickr-calendar .flatpickr-month,
 .flatpickr-calendar .flatpickr-month {
     position: relative !important;
     display: flex !important;
@@ -366,16 +377,20 @@
 }
 
 /* Rimuovi eventuali offset verticali dalle frecce */
+#leaves-archive-root .flatpickr-calendar .flatpickr-prev-month svg,
+#leaves-archive-root .flatpickr-calendar .flatpickr-next-month svg,
 .flatpickr-calendar .flatpickr-prev-month svg,
 .flatpickr-calendar .flatpickr-next-month svg {
     vertical-align: middle !important;
 }
 
 /* Giorni della settimana più leggibili */
+#leaves-archive-root .flatpickr-calendar .flatpickr-weekdays,
 .flatpickr-calendar .flatpickr-weekdays {
     height: 40px;
 }
 
+#leaves-archive-root .flatpickr-calendar .flatpickr-weekday,
 .flatpickr-calendar .flatpickr-weekday {
     font-size: 13px !important;
     font-weight: 600;
@@ -383,6 +398,7 @@
 }
 
 /* Assicura che il container dei preset sia della stessa larghezza del calendario */
+#leaves-archive-root .flatpickr-calendar .periodo-presets-container,
 .flatpickr-calendar .periodo-presets-container {
     width: 100%;
     max-width: 380px;
@@ -390,15 +406,20 @@
 }
 
 /* Assicura che il calendario abbia uno sfondo bianco */
+#leaves-archive-root .flatpickr-calendar.arrowTop:before,
 .flatpickr-calendar.arrowTop:before {
     border-bottom-color: #ffffff;
 }
 
+#leaves-archive-root .flatpickr-calendar.arrowTop:after,
 .flatpickr-calendar.arrowTop:after {
     border-bottom-color: #ffffff;
 }
 
 /* Colori nero/grigi/bianco per la selezione del periodo */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.selected,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.endRange,
 .flatpickr-calendar .flatpickr-day.selected,
 .flatpickr-calendar .flatpickr-day.startRange,
 .flatpickr-calendar .flatpickr-day.endRange {
@@ -409,6 +430,7 @@
 }
 
 /* Rimuove qualsiasi colore azzurro durante hover - copre tutte le combinazioni */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day:hover,
 .flatpickr-calendar .flatpickr-day:hover {
     background-color: #f5f5f5 !important;
     border-color: #666666 !important;
@@ -416,6 +438,9 @@
 }
 
 /* Hover su giorni selezionati - mantiene nero */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.selected:hover,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange:hover,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.endRange:hover,
 .flatpickr-calendar .flatpickr-day.selected:hover,
 .flatpickr-calendar .flatpickr-day.startRange:hover,
 .flatpickr-calendar .flatpickr-day.endRange:hover {
@@ -424,6 +449,7 @@
     color: #ffffff !important;
 }
 
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.inRange,
 .flatpickr-calendar .flatpickr-day.inRange {
     background-color: #e0e0e0 !important;
     border-color: #666666 !important;
@@ -431,6 +457,7 @@
 }
 
 /* Hover su giorni in range */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.inRange:hover,
 .flatpickr-calendar .flatpickr-day.inRange:hover {
     background-color: #f5f5f5 !important;
     border-color: #666666 !important;
@@ -438,6 +465,8 @@
 }
 
 /* Stile per le date nel range selezionato */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange.inRange,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.endRange.inRange,
 .flatpickr-calendar .flatpickr-day.startRange.inRange,
 .flatpickr-calendar .flatpickr-day.endRange.inRange {
     background-color: #000000 !important;
@@ -445,6 +474,8 @@
 }
 
 /* Hover su startRange/endRange in range */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange.inRange:hover,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.endRange.inRange:hover,
 .flatpickr-calendar .flatpickr-day.startRange.inRange:hover,
 .flatpickr-calendar .flatpickr-day.endRange.inRange:hover {
     background-color: #000000 !important;
@@ -453,11 +484,13 @@
 }
 
 /* Date oggi */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.today,
 .flatpickr-calendar .flatpickr-day.today {
     border-color: #666666 !important;
     font-weight: 600;
 }
 
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.today:hover,
 .flatpickr-calendar .flatpickr-day.today:hover {
     background-color: #f5f5f5 !important;
     border-color: #666666 !important;
@@ -465,6 +498,9 @@
 }
 
 /* Hover su oggi quando è selezionato */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.today.selected:hover,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.today.startRange:hover,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.today.endRange:hover,
 .flatpickr-calendar .flatpickr-day.today.selected:hover,
 .flatpickr-calendar .flatpickr-day.today.startRange:hover,
 .flatpickr-calendar .flatpickr-day.today.endRange:hover {
@@ -474,6 +510,7 @@
 }
 
 /* Hover su oggi quando è in range */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.today.inRange:hover,
 .flatpickr-calendar .flatpickr-day.today.inRange:hover {
     background-color: #f5f5f5 !important;
     border-color: #666666 !important;
@@ -482,6 +519,10 @@
 
 /* SOLUZIONE DEFINITIVA: Rimuove la barra azzurra tra date consecutive */
 /* Rimuove qualsiasi pseudo-elemento che potrebbe creare la barra azzurra */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange::before,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.endRange::before,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange::after,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.endRange::after,
 .flatpickr-calendar .flatpickr-day.startRange::before,
 .flatpickr-calendar .flatpickr-day.endRange::before,
 .flatpickr-calendar .flatpickr-day.startRange::after,
@@ -495,6 +536,10 @@
 }
 
 /* Rimuove qualsiasi background azzurro/blu da tutti i container e wrapper */
+#leaves-archive-root .flatpickr-calendar .flatpickr-days,
+#leaves-archive-root .flatpickr-calendar .flatpickr-dayContainer,
+#leaves-archive-root .flatpickr-calendar .flatpickr-weekWrapper,
+#leaves-archive-root .flatpickr-calendar .flatpickr-week,
 .flatpickr-calendar .flatpickr-days,
 .flatpickr-calendar .flatpickr-dayContainer,
 .flatpickr-calendar .flatpickr-weekWrapper,
@@ -504,12 +549,14 @@
 }
 
 /* Rimuove qualsiasi elemento wrapper che potrebbe avere uno sfondo azzurro */
+#leaves-archive-root .flatpickr-calendar .flatpickr-dayContainer > *,
 .flatpickr-calendar .flatpickr-dayContainer > * {
     background-color: transparent !important;
     background-image: none !important;
 }
 
 /* Forza nero per date consecutive - caso specifico quando startRange e endRange sono adiacenti */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange + .flatpickr-day.endRange,
 .flatpickr-calendar .flatpickr-day.startRange + .flatpickr-day.endRange {
     background-color: #000000 !important;
     border-color: #000000 !important;
@@ -518,6 +565,8 @@
 }
 
 /* Rimuove qualsiasi pseudo-elemento che potrebbe creare la barra azzurra tra date consecutive */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange + .flatpickr-day.endRange::before,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange + .flatpickr-day.endRange::after,
 .flatpickr-calendar .flatpickr-day.startRange + .flatpickr-day.endRange::before,
 .flatpickr-calendar .flatpickr-day.startRange + .flatpickr-day.endRange::after {
     display: none !important;
@@ -529,6 +578,7 @@
 }
 
 /* Rimuove qualsiasi elemento che potrebbe essere tra startRange e endRange quando sono consecutivi */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange ~ .flatpickr-day.endRange:not(.startRange),
 .flatpickr-calendar .flatpickr-day.startRange ~ .flatpickr-day.endRange:not(.startRange) {
     background-color: #000000 !important;
     border-color: #000000 !important;
@@ -536,6 +586,7 @@
 }
 
 /* Assicura che quando startRange e endRange sono lo stesso elemento (singola data) sia nero */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange.endRange,
 .flatpickr-calendar .flatpickr-day.startRange.endRange {
     background-color: #000000 !important;
     border-color: #000000 !important;
@@ -543,6 +594,8 @@
 }
 
 /* Rimuove qualsiasi overlay o elemento posizionato che potrebbe creare la barra azzurra */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange[style*="background"],
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.endRange[style*="background"],
 .flatpickr-calendar .flatpickr-day.startRange[style*="background"],
 .flatpickr-calendar .flatpickr-day.endRange[style*="background"] {
     background-color: #000000 !important;
@@ -550,6 +603,7 @@
 }
 
 /* Forza nero per qualsiasi elemento che potrebbe essere posizionato tra le date */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange ~ .flatpickr-day.endRange,
 .flatpickr-calendar .flatpickr-day.startRange ~ .flatpickr-day.endRange {
     background-color: #000000 !important;
     border-color: #000000 !important;
@@ -558,6 +612,8 @@
 }
 
 /* Rimuove qualsiasi box-shadow o effetto che potrebbe creare la barra azzurra */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.endRange,
 .flatpickr-calendar .flatpickr-day.startRange,
 .flatpickr-calendar .flatpickr-day.endRange {
     box-shadow: none !important;
@@ -565,6 +621,8 @@
 }
 
 /* Rimuove qualsiasi elemento che potrebbe avere uno sfondo azzurro tra le date */
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange.inRange + .flatpickr-day.endRange.inRange,
+#leaves-archive-root .flatpickr-calendar .flatpickr-day.startRange.inRange ~ .flatpickr-day.endRange.inRange,
 .flatpickr-calendar .flatpickr-day.startRange.inRange + .flatpickr-day.endRange.inRange,
 .flatpickr-calendar .flatpickr-day.startRange.inRange ~ .flatpickr-day.endRange.inRange {
     background-color: #000000 !important;
@@ -573,46 +631,93 @@
 }
 
 /* Padding già definito sopra */
-
+#leaves-archive-root .flatpickr-calendar .flatpickr-days,
 .flatpickr-calendar .flatpickr-days {
     padding-bottom: 6px;
 }
 
+#leaves-archive-root .flatpickr-months .flatpickr-prev-month,
+#leaves-archive-root .flatpickr-months .flatpickr-next-month,
 .flatpickr-months .flatpickr-prev-month,
 .flatpickr-months .flatpickr-next-month {
 	top: 29px !important;
 }
 
+#leaves-archive-root .flatpickr-months .flatpickr-prev-month svg,
 .flatpickr-months .flatpickr-prev-month svg {
 	margin-left: 25px;
-
 }
+
+#leaves-archive-root .flatpickr-months .flatpickr-next-month svg,
 .flatpickr-months .flatpickr-next-month svg {
 	margin-right: 25px;
-
 }
 
-/* Spinner Container per Filter Bar */
-.filter-spinner-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.8);
-    display: flex;
+
+#leaves-archive-root .toggle-switch {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    border-radius: 3.3px;
+    cursor: pointer;
+    user-select: none;
 }
 
-.filter-bar-container {
-    position: relative;
+#leaves-archive-root .toggle-switch-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+#leaves-archive-root .toggle-switch-track {
+    display: inline-flex;
+    align-items: center;
+    width: 40px;
+    height: 22px;
+    min-width: 40px;
+    min-height: 22px;
+    border-radius: 11px;
+    background-color: #808080;
+    transition: background-color 0.2s ease;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
+#leaves-archive-root .toggle-switch-thumb {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 1px solid #404040;
+    transition: transform 0.2s ease;
+    transform: translateX(0);
+}
+
+#leaves-archive-root .toggle-switch-input:checked + .toggle-switch-track .toggle-switch-thumb {
+    transform: translateX(18px);
+}
+
+#leaves-archive-root .toggle-switch-input:checked + .toggle-switch-track {
+    background-color: #258f21; /* verdino militare */
+}
+
+#leaves-archive-root .toggle-switch-input:focus-visible + .toggle-switch-track {
+    outline: 2px solid #808080;
+    outline-offset: 2px;
+}
+
+#leaves-archive-root .filter-bar-container.filters-disabled .toggle-switch {
+    pointer-events: none;
+    opacity: 0.6;
 }
 
 /* Spinner Container per Lista */
-.list-spinner-container {
+#leaves-archive-root .list-spinner-container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -622,21 +727,19 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .filter-bar {
+    #leaves-archive-root .filter-bar {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .filter-group {
+    #leaves-archive-root .filter-group {
         width: 100%;
     }
 
-    .filter-group .input-group,
-    .filter-group .form-select,
-    .filter-group .form-control {
+    #leaves-archive-root .filter-group .input-group,
+    #leaves-archive-root .filter-group .form-select,
+    #leaves-archive-root .filter-group .form-control {
         width: 100%;
         min-width: auto;
     }
-
 }
-

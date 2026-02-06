@@ -7,7 +7,6 @@ import {
     getTextColorForBackground
 } from '../../js/utils.js';
 
-/* components/approval-row/approval-row.js */
 export const initApprovalRow = (config) => {
     // Estrai le dipendenze da config
     const { store } = config;
@@ -227,6 +226,8 @@ export const initApprovalRow = (config) => {
             typeBadge.classList.add('badge-ferie');
         } else if (tipoRichiesta === 'Permessi' || typeValue === 2) {
             typeBadge.classList.add('badge-permessi');
+        } else if (tipoRichiesta === 'Malattia' || typeValue === 3) {
+            typeBadge.classList.add('badge-malattia');
         }
         typeBadge.textContent = tipoRichiesta || '';
 

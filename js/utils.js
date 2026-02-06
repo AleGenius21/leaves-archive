@@ -4,8 +4,6 @@
 // UTILS - Funzioni di utilità condivise
 // ============================================================================
 
-// --- Date Utilities ---
-
 /**
  * Formatta una data stringa (YYYY-MM-DD) in DD/MM/YY
  */

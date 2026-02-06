@@ -123,6 +123,11 @@
 	color: #ffffff;
 }
 
+#leaves-archive-root .badge-malattia {
+	background-color: #ef4444;
+	color: #ffffff;
+}
+
 #leaves-archive-root .request-quantity {
 	display: flex;
 	flex-direction: column;

@@ -7,11 +7,13 @@
                 <div id="filterBarContainer">
                     <div class="filter-bar-container">
                         <div class="filter-bar">
+
+							<!-- Filtro di ricerca testuale -->
                             <div class="filter-group">
                                 <label class="filter-label" for="filterSearch">Ricerca:</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white border-end-0">
-                                        <i class="bi bi-search"></i>
+                                        <i class="fa-solid fa-search"></i>
                                     </span>
                                     <input type="text" class="form-control border-start-0" id="filterSearch" placeholder="Cerca dipendente..." aria-label="Cerca dipendente" />
                                 </div>
@@ -37,31 +39,39 @@
 								</label>
 							</div>
 
-
+							<!-- Filtro Tipo -->
                             <div class="filter-group">
                                 <label class="filter-label" for="filterType">Tipo:</label>
                                 <select class="form-select form-select-sm" id="filterType" aria-label="Filtra per tipologia">
                                     <option value="">Tutti</option>
                                 </select>
                             </div>
+
+							<!-- Filtro Stato -->
                             <div class="filter-group">
                                 <label class="filter-label" for="filterStato">Stato:</label>
                                 <select class="form-select form-select-sm" id="filterStato" aria-label="Filtra per stato">
                                     <option value="">Tutti</option>
                                 </select>
                             </div>
+
+							<!-- Filtro Reparto -->
                             <div class="filter-group">
                                 <label class="filter-label" for="filterReparto">Reparto:</label>
                                 <select class="form-select form-select-sm" id="filterReparto" aria-label="Filtra per reparto">
                                     <option value="">Tutti</option>
                                 </select>
                             </div>
+
+							<!-- Filtro Mansione -->
                             <div class="filter-group">
                                 <label class="filter-label" for="filterMansione">Mansione:</label>
                                 <select class="form-select form-select-sm" id="filterMansione" aria-label="Filtra per mansione">
                                     <option value="">Tutti</option>
                                 </select>
                             </div>
+
+							<!-- Ordinamento -->
                             <div class="filter-group">
                                 <label class="filter-label" for="filterSort">Ordina:</label>
                                 <select class="form-select form-select-sm" id="filterSort" aria-label="Ordina per">
@@ -69,9 +79,11 @@
                                     <option value="urgenza-decrescente">Richiesta meno recente</option>
                                 </select>
                             </div>
+
+							<!-- Bottone RESETTA FILTRI -->
                             <div class="filter-group filter-group-reset">
                                 <button type="button" class="btn-reset-filters" id="filterReset" aria-label="Reset filtri" disabled>
-                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                    <i class="fa-solid fa-arrows-rotate"></i>
                                     <span>Resetta filtri</span>
                                 </button>
                             </div>
@@ -122,10 +134,12 @@
 	
     <!-- Carica CSS e JS -->
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/main.css">
 	<link rel="stylesheet" href="components/approval-row/approval-row.css">
     <link rel="stylesheet" href="components/filters/filters.css">
     <link rel="stylesheet" href="components/calendars/calendars.css">
+	
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
@@ -162,6 +176,12 @@
                         defaultStatus: [1, 2],              // [1]=Approvato, [2]=Rifiutato, [0]=In attesa, [3]=Annullato
                                                             // Default: [0, 1, 2] (tutti tranne annullati)
                         
+                        // Controlla se mostrare/nascondere il filtro cantiere (opzionale)
+                        buildCantiereFilter: false,
+                        
+                        // Controlla se mostrare/nascondere il filtro post-festivo (opzionale)
+                        buildPostFestivoFilter: false,
+
                         // Mappatura personalizzata stati -> descrizioni (opzionale)
                         statusCodes: {
                             0: 'In attesa',
